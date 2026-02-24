@@ -24,13 +24,14 @@ import urllib.error
 class TemplateUpgrader:
     """Manages template upgrades from remote repository."""
     
-    def __init__(self, repo_root: Path):
+    def __init__(self, repo_root: Path, ignore_delay: bool = False):
         self.repo_root = repo_root
         self.temp_dir = repo_root / "temp" / "upgrade_tmp"
         self.version_file = repo_root / "LAST_VERSION.json"
         self.last_check_file = repo_root / ".copilot-memory" / "upgrade_last_check.txt"
         self.remote_url = "https://github.com/goemktg/Prompt_Template.git"
         self.version_api = "https://raw.githubusercontent.com/goemktg/Prompt_Template/main/LAST_VERSION.json"
+        self.ignore_delay = ignore_delay
         
     def _ensure_check_file_dir(self):
         """Create .copilot-memory directory if it doesn't exist."""
@@ -56,6 +57,9 @@ class TemplateUpgrader:
     
     def _should_check_for_updates(self) -> bool:
         """Check if 24 hours have passed since last check."""
+        if self.ignore_delay:
+            return True
+        
         last_check = self._get_last_check_time()
         if last_check is None:
             return True
@@ -63,7 +67,7 @@ class TemplateUpgrader:
         time_since_check = datetime.now() - last_check
         if time_since_check < timedelta(days=1):
             print(f"Already checked for updates today ({time_since_check.total_seconds() / 3600:.1f} hours ago).")
-            print("Run again tomorrow or delete .copilot-memory/upgrade_last_check.txt to force check.")
+            print("Run again tomorrow or use --ignoreDelay option to force check.")
             return False
         return True
     
@@ -239,11 +243,24 @@ class TemplateUpgrader:
 
 def main():
     """Main entry point."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="Upgrade AI Template from remote repository"
+    )
+    parser.add_argument(
+        "--ignoreDelay",
+        action="store_true",
+        help="Skip 24-hour check delay and force version check"
+    )
+    
+    args = parser.parse_args()
+    
     # Find repository root
     script_dir = Path(__file__).parent
     repo_root = script_dir.parent
     
-    upgrader = TemplateUpgrader(repo_root)
+    upgrader = TemplateUpgrader(repo_root, ignore_delay=args.ignoreDelay)
     
     try:
         success = upgrader.upgrade()
