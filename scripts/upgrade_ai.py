@@ -126,7 +126,7 @@ class TemplateUpgrader:
     def _get_remote_templates(self) -> set:
         """Get list of .template.md files in cloned repo."""
         template_files = set()
-        cloned_repo = self.temp_dir / "Prompt_Template"
+        cloned_repo = self.temp_dir
         for file in cloned_repo.rglob("*.template.md"):
             template_files.add(file.relative_to(cloned_repo))
         return template_files
@@ -148,7 +148,7 @@ class TemplateUpgrader:
     
     def _copy_files(self):
         """Copy files from cloned repo to local repo."""
-        cloned_repo = self.temp_dir / "Prompt_Template"
+        cloned_repo = self.temp_dir
         
         if not cloned_repo.exists():
             print("ERROR: Cloned repository not found")
