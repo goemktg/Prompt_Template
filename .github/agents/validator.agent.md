@@ -290,8 +290,8 @@ Combine findings:
 - Validation Metric: {how to measure success}
 
 #### Key Citations
-- [Paper/Link 1](url)
-- [Paper/Link 2](url)
+- Paper/Reference 1: [title]
+- Paper/Reference 2: [title]
 - arXiv: {id}
 
 ---

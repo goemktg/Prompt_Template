@@ -6,7 +6,15 @@ model: Gemini 3 Pro (Preview) (copilot)
 target: vscode
 user-invokable: false
 tools:
-  ['read', 'edit', 'agent', 'search', 'web', 'context7/*', 'memory/*', 'sequentialthinking/*', 'ms-vscode.vscode-websearchforcopilot/websearch']
+  - read
+  - edit
+  - agent
+  - search
+  - web
+  - context7/*
+  - memory/*
+  - sequentialthinking/*
+  - ms-vscode.vscode-websearchforcopilot/websearch
 ---
 
 # DOC-WRITER AGENT
@@ -267,7 +275,7 @@ Before generating any documentation:
 ```markdown
 # [Project Name]
 
-[![Status](shield)]() [![License](shield)]()
+Status: Active | License: MIT
 
 One-sentence description of what this project does.
 
@@ -317,23 +325,23 @@ Expected output:
 [code example]
 \`\`\`
 
-For more examples, see [EXAMPLES.md](EXAMPLES.md).
+For more examples, see the examples documentation.
 
 ## Documentation
 
-- **[Getting Started](GETTING_STARTED.md)** — Step-by-step tutorial
-- **[API Reference](API_REFERENCE.md)** — Complete function/class documentation
-- **[Examples](EXAMPLES.md)** — Common use cases with code
-- **[Troubleshooting](TROUBLESHOOTING.md)** — FAQ and error solutions
-- **[Contributing](CONTRIBUTING.md)** — How to contribute
+- `Getting Started Guide` — Step-by-step tutorial
+- `API Reference Doc` — Complete function/class documentation
+- `Code Examples` — Common use cases with code
+- `FAQ and Issue Resolution` — Troubleshooting and solutions
+- `Contributor Guidelines` — How to contribute
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See the project's contributing guidelines for details.
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+MIT License. See the project's License file for details.
 ```
 
 ### Step 2: API_REFERENCE.md (Technical Documentation)
@@ -511,9 +519,9 @@ After:
 
 ## Next Steps
 
-- For more examples, see [EXAMPLES.md](EXAMPLES.md)
-- For complete API reference, see [API_REFERENCE.md](API_REFERENCE.md)
-- For advanced usage, see [ARCHITECTURE_GUIDE.md](ARCHITECTURE_GUIDE.md)
+- Consult the examples documentation for additional patterns
+- Review the full API documentation for reference
+- Study the architecture guide for advanced concepts
 
 ## Troubleshooting
 
@@ -526,7 +534,7 @@ After:
 [fix command or steps]
 \`\`\`
 
-For more errors, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+For additional common issues, review the troubleshooting section.
 ```
 
 ### Step 4: EXAMPLES.md (Use Cases & Patterns)

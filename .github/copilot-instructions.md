@@ -218,6 +218,16 @@ Write in **Korean** for documents requiring frequent human review (e.g., reports
 - Follow framework conventions (e.g., use framework's built-in patterns)
 - Document deviations from standard approaches
 
+### Markdown Standards
+
+- **Markdown Linting**: All written markdown documents must have no markdown linting problems
+  - Enable markdown linting tools (e.g., markdownlint, mdast-lint)
+  - Follow standard markdown rules and conventions
+  - Ensure consistent formatting across all documentation
+  - Fix any linting errors before finalizing documents
+- **Formatting Consistency**: Apply uniform formatting rules across all markdown files (headings, lists, code blocks, links)
+- **Documentation Quality**: Each markdown document must meet linting standards as a quality assurance requirement
+
 ---
 
 ## 3. Version Control & Workflow
