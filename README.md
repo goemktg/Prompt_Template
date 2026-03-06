@@ -2,6 +2,8 @@
 
 A standardized template for **any software development project** with **GitHub Copilot** integration and AI-powered workflows.
 
+> **📌 Project-Specific Details**: For actual project structure, build instructions, and tech stack, refer to **[documents/PROJECT.md](documents/PROJECT.md)**.
+
 ## Features
 
 - 🤖 **AI-Optimized**: Pre-configured GitHub Copilot instructions, custom agents, and agent skills
@@ -33,42 +35,33 @@ cd <project-directory>
 
 ## Project Structure
 
+> **📌 For detailed project structure**: See **[documents/PROJECT.md](documents/PROJECT.md)** for the actual directory layout and organization specific to this project.
+
+This template provides a standardized structure that adapts to any project type:
+
 ```text
 .
-├── .github/
-│   ├── agents/              # Custom Copilot agents (.agent.md)
+├── .github/                 # GitHub Copilot configuration
+│   ├── agents/              # Custom agents (.agent.md)
 │   ├── skills/              # Agent Skills (workflows)
-│   ├── prompts/             # Reusable prompt templates
-│   └── copilot-instructions.md  # Global Copilot instructions
-├── src/                     # Source code (adapt to your project)
+│   └── copilot-instructions.md
+├── documents/               # Documentation hub
+│   ├── PROJECT.md           # ⭐ Project overview (start here!)
+│   ├── final/               # Published documents
+│   ├── drafts/              # Work in progress
+│   └── reference/           # External references
+├── src/                     # Source code
 ├── tests/                   # Test files
 ├── scripts/                 # Automation scripts
-├── documents/               # Curated documentation
-│   ├── final/               # Published reports
-│   ├── drafts/              # Work in progress
-│   ├── reference/           # External references
-│   │   ├── papers/          # Academic paper summaries
-│   │   └── technical/       # API docs, technical guides
-│   ├── templates/           # Document templates
-│   ├── PROJECT.md           # Project overview (start here!)
-│   ├── AGENT_MANUAL.md      # AI agent operation manual
-│   ├── BUILD_GUIDE.md       # Build instructions
-│   ├── TEST_GUIDE.md        # Testing procedures
-│   ├── QUICKSTART.md        # Quick start guide
-│   └── CHANGELOG.md         # Change history
-├── reference_codes/         # Reference code from external projects
-├── results/                 # Execution results (if applicable)
-├── logs/                    # Application logs
-├── temp/                    # Temporary files (gitignored)
-├── AGENTS.md                # Agent documentation (must-read!)
-└── README.md                # This file
+└── AGENTS.md                # Agent documentation
 ```
 
-**Note**: The structure above is flexible. Adapt it to your project type:
-- **RimWorld Mod**: See [documents/PROJECT.md](documents/PROJECT.md) for actual structure
-- **ML/AI Research**: Add `configs/`, `results/`, `checkpoints/`
-- **Web Development**: Add `public/`, `api/`, `frontend/`, `backend/`
-- **Game Development**: Add `assets/`, `scenes/`, `prefabs/`
+**Adaptable to**:
+
+- Software development (Web, Desktop, Mobile)
+- Research & ML/AI projects
+- Game & mod development
+- Infrastructure & DevOps
 
 ## AI Agents
 
@@ -139,7 +132,7 @@ Agent Skills are specialized workflows automatically loaded by Copilot:
 
 Skills are automatically loaded by Copilot when relevant. You can also manually load them:
 
-```
+```bash
 # Load a skill
 @workspace /skills documentation
 
@@ -150,6 +143,7 @@ Skills are automatically loaded by Copilot when relevant. You can also manually 
 ### Memory Management
 
 Use **Memory MCP** (`mcp_memory_*` tools) for transient data:
+
 - Observations/Notes → `mcp_memory_store`
 - Prior context lookup → `mcp_memory_search`
 - List all memories → `mcp_memory_list`
@@ -161,26 +155,31 @@ Use **Memory MCP** (`mcp_memory_*` tools) for transient data:
 ### For Different Project Types
 
 **RimWorld Mod Development**:
+
 - Structure: See [documents/PROJECT.md](documents/PROJECT.md)
 - Build: MSBuild, .NET Framework 4.8
 - Test: In-game testing with Debug Mode
 
 **ML/AI Research**:
+
 - Add: `configs/`, `results/`, `checkpoints/`
 - Tools: PyTorch, TensorFlow, Weights & Biases
 - Test: Reproducibility checks, statistical validation
 
 **Web Development**:
+
 - Add: `frontend/`, `backend/`, `api/`, `public/`
 - Tools: React, Node.js, Express, Next.js
 - Test: Unit tests, integration tests, E2E tests
 
 **Game Development**:
+
 - Add: `assets/`, `scenes/`, `scripts/`, `prefabs/`
 - Tools: Unity, Unreal, Godot
 - Test: Playtesting, performance profiling
 
 **General Software**:
+
 - Standard structure works out of the box
 - Adapt as needed for your tech stack
 
@@ -216,10 +215,12 @@ Use **Memory MCP** (`mcp_memory_*` tools) for transient data:
 The `reference_codes/` directory stores **external code used as reference** during development.
 
 **Management Principles**:
+
 - ✅ Include: External projects, library examples, prototype code
 - ❌ Exclude: Active project code (`src/`), archived versions (`archive/`), documentation (`documents/`)
 
 **Guidelines**:
+
 1. Verify and comply with licenses
 2. Document version/date information clearly
 3. Reference code is read-only (no direct modifications)
@@ -251,5 +252,5 @@ This is a template project. To use it:
 
 ---
 
-**Template Version**: 1.0.0  
-**Last Updated**: 2026-02-23
+**Template Version**: 1.0.1  
+**Last Updated**: 2026-03-06
