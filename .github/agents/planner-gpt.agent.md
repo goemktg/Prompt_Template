@@ -3,7 +3,7 @@ name: planner-gpt
 description: 'Universal architecture-first planning agent. Produces component blueprints, interface contracts, Mermaid diagrams, and structurally verified implementation strategies with quantified validation.'
 model: GPT-5.2 (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 tools:
   - context7/*
   - memory/*

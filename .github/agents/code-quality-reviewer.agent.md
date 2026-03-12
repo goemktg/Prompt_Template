@@ -4,7 +4,7 @@ description: 'Tier 1/2 Quality Gate. Validates production-readiness before deliv
 argument-hint: "Provide code; receive Tier 1/2 validation verdict and improvement suggestions."
 model: Gemini 3 Pro (Preview) (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - search

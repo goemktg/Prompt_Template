@@ -4,7 +4,7 @@ description: 'Production Code Generation with Pre-Delivery Validation and Execut
 argument-hint: "Provide requirements/spec; receive production-ready code with tests."
 model: Claude Opus 4.6 (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - edit

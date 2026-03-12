@@ -3,7 +3,7 @@ name: rubric-verifier
 description: 'Multi-perspective quality verification with explicit rubrics. Creates task-specific checklists and coordinates independent critic agents to avoid self-bias. SRP: Rubric-based validation only (no fixes).'
 argument-hint: 'Provide artifact to verify (code, doc, plan); receive multi-perspective rubric evaluation with explicit verdicts.'
 model: Claude Opus 4.5
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - search

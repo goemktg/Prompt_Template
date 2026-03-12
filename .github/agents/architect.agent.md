@@ -2,7 +2,7 @@
 name: architect
 description: 'System architecture design and technical solution planning. Designs component boundaries, validates architectural decisions, coordinates with planners and generators.'
 model: Claude Opus 4.5
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - search

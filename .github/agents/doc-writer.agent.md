@@ -4,7 +4,7 @@ description: 'Professional documentation generation for README, API docs, guides
 argument-hint: "Provide project context, code files, and documentation requirements; receive comprehensive, production-ready documentation."
 model: Gemini 3 Pro (Preview) (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - edit

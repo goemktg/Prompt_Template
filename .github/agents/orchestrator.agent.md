@@ -4,7 +4,7 @@ description: 'Universal project task orchestrator for any project type—softwar
 argument-hint: "Describe your goal. Examples: 'Feature: add user authentication', 'Fix: resolve CI pipeline timeout', 'Research: compare optimization approaches', 'Setup: initialize project environment'"
 model: Claude Sonnet 4.5 (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - agent

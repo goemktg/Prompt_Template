@@ -3,7 +3,7 @@ name: qa-regression-sentinel
 description: 'Execution-based quality verification. Runs tests, detects regressions, identifies flaky tests, and gates code changes based on test results.'
 argument-hint: 'Provide code changes, test files, or failure logs; receive test execution results and regression metrics.'
 model: Claude Opus 4.5
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - search

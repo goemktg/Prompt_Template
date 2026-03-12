@@ -8,7 +8,7 @@ tools:
   - sequentialthinking/sequentialthinking
 model: Claude Sonnet 4.5 (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 ---
 
 # Planner-Claude Agent Specification (Universal, Project-Agnostic)

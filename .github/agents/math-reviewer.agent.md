@@ -3,7 +3,7 @@ name: math-reviewer
 description: 'Mathematical correctness reviewer. Verifies equations, dimensional consistency, numerical stability, and mathematical properties of implementations.'
 argument-hint: 'Provide source material (research paper, specification) and implementation code; receive mathematical correctness assessment.'
 model: GPT-5.2
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - search

@@ -14,7 +14,7 @@ tools:
   - ms-vscode.vscode-websearchforcopilot/websearch
   - web
 model: Claude Opus 4.5 (copilot)
-user-invokable: false
+user-invocable: false
 ---
 
 # Research-Claude Agent: System Complexity & Safety Analysis Specialist

@@ -3,7 +3,7 @@ name: planner-gemini
 description: 'Universal feasibility and resource planning agent. Validates hard constraints, computes explicit budgets, and produces mathematically verified plans with confidence annotations.'
 model: Gemini 3 Pro (Preview) (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 tools:
   - context7/resolve-library-id
   - context7/query-docs

@@ -3,7 +3,7 @@ name: idea-generator-claude
 description: 'Creative and ethical idea generator. Specializes in user-centric innovation, safety analysis, and divergent thinking for complex problems.'
 argument-hint: "Provide problem statement or domain; receive novel, user-centric ideas with comprehensive safety and ethical analysis."
 model: Claude Opus 4.5
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - search

@@ -12,7 +12,7 @@ tools:
 argument-hint: 'Paper topic, research question, or specific paper ID to analyze'
 model: Claude Sonnet 4.5 (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 ---
 
 # RESEARCH-GPT AGENT

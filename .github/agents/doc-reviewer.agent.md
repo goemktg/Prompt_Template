@@ -4,7 +4,7 @@ description: 'Documentation Quality Review. Checks clarity, accuracy, completene
 argument-hint: "Provide doc paths; receive APPROVED/ISSUES with actionable fixes."
 model: Claude Opus 4.5 (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - agent

@@ -4,7 +4,7 @@ description: 'Autonomous bug diagnosis and targeted fixing with rigorous executi
 argument-hint: "Describe the issue/failure. Examples: 'Runtime error in payment handler', 'Test suite timeout', 'Type checking failures in API module', 'Memory leak in data pipeline', 'Build failure: missing dependency'"
 model: Claude Sonnet 4.5 (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - edit

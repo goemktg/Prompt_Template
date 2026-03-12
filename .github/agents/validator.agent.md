@@ -4,7 +4,7 @@ description: 'Deep-validate ideas (methodology/theory correctness) by calling re
 argument-hint: 'Paste the idea set (or memory keys/tags) + any constraints (time/budget/privacy) + desired rigor level'
 model: Gemini 3 Pro (Preview) (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - search

@@ -3,7 +3,7 @@ name: citation-tracer
 description: 'Builds research lineage via depth-first citation chaining. Identifies foundational papers and research evolution.'
 argument-hint: "Provide seed paper (arXiv ID, DOI, or Title); receive citation lineage graph, foundational papers, and research evolution analysis."
 model: Claude Opus 4.5
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - context7/*

@@ -4,7 +4,7 @@ description: 'Implementation-focused deep research agent. Analyzed papers for pr
 argument-hint: 'topic::string (required), paper_ids::array[string] (optional), depth::enum[summary|full|reproduction] (default: full)'
 model: Claude Sonnet 4.5 (copilot)
 target: vscode
-user-invokable: false
+user-invocable: false
 tools:
   - arxiv-mcp-server/search_papers
   - arxiv-mcp-server/read_paper

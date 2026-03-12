@@ -3,7 +3,7 @@ name: idea-generator-gpt
 description: 'System architecture specialist. Generates ideas focused on system design, business models, and strategic scalability.'
 argument-hint: 'Provide problem statement, domain, or design challenge. Receive architecture-focused ideas with patterns, business models, and system diagrams.'
 model: GPT-5.2
-user-invokable: false
+user-invocable: false
 tools:
   - read
   - search
