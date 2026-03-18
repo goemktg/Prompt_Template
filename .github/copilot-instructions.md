@@ -7,9 +7,9 @@ Refer to `documents/PROJECT.md` for project-specific details.
 
 ---
 
-## CRITICAL: Version Check on Every User Prompt
+## CRITICAL: Version Check Once Per Session
 
-🔴 **MANDATORY PRE-FLIGHT CHECK** - Execute immediately upon receiving any user prompt, BEFORE taking any other action or processing the request:
+🔴 **MANDATORY PRE-FLIGHT CHECK (SESSION-ONCE)** - Execute immediately upon receiving the first user prompt of a new session, BEFORE taking any other action or processing the request:
 
 1. **Execute**: `python scripts/upgrade_ai.py` in the workspace terminal
 2. **Check the exit code**:
@@ -20,11 +20,12 @@ Refer to `documents/PROJECT.md` for project-specific details.
      - Terminate this response
 
 **Implementation Rules**:
-- This check must occur **FIRST**, before processing any user request
+- This check must occur **FIRST** for the first user prompt in a new session
 - This check happens **BEFORE** calling any tools, making any file changes, or generating substantial responses
-- Never skip, delay, or postpone this check
-- This takes absolute precedence over all other operations
-- No user request is processed without first completing this check
+- Never skip, delay, or postpone this check on the first prompt of a new session
+- This takes absolute precedence over all other operations on first prompt only
+- Mark the check as completed for the current session after a successful run (exit code 0)
+- If the current session is already marked as completed, skip re-running this check and proceed with the user's request
 
 ---
 
@@ -132,6 +133,56 @@ Before taking any action (either tool calls _or_ responses to the user), you mus
 2.  **NEVER** simulate agent outputs. Always invoke and wait for results.
 3.  **Parallel Invocation**: Call independent agents simultaneously.
 
+### Subagent Auto-Invocation Policy (Strict)
+
+#### 1) Mandatory Invocation Triggers
+You **MUST** invoke at least one specialized subagent via `runSubagent` when **ANY** of the following is true:
+
+1. The task requires 3+ distinct phases (research, implementation, verification, documentation, etc.).
+2. The task spans 2+ domains (for example, architecture + code + QA).
+3. The user asks for optimization, root-cause analysis, or production-quality validation.
+4. The expected work touches 3+ files or requires non-trivial refactoring.
+5. The task needs external verification (documentation, papers, or web references) before implementation.
+
+If a trigger is met, do **NOT** proceed as a single-agent workflow unless blocked by tooling or user constraints.
+
+#### 2) Agent Selection Rules
+- Architecture/design ambiguity: use `@architect`
+- Bug diagnosis/fix execution: use `@fixer`
+- Quality gate/review: use `@code-quality-reviewer`
+- Regression/test reliability: use `@qa-regression-sentinel`
+- Documentation generation/review: use `@doc-writer` / `@doc-reviewer`
+- Research/theory/implementation feasibility: use `@research-gpt` / `@research-gemini` / `@research-claude`
+
+#### 3) Parallel Delegation
+If subtasks are independent, invoke subagents in parallel.
+
+Examples:
+- research + architecture
+- implementation + QA validation
+- documentation writing + code-quality review
+
+#### 4) Delegation-First Workflow
+For complex tasks, follow this order:
+
+1. Decompose the task.
+2. Delegate to specialized subagents.
+3. Integrate subagent outputs.
+4. Run validation.
+5. Report with evidence.
+
+#### 5) Anti-Skipping Guard
+If no subagent is invoked for a trigger-matching task, the assistant **MUST** explicitly state why (tool limits, blocked context, or user constraints) and propose an alternative delegation plan.
+
+#### 6) Output Requirements
+When subagents are used, the final response **MUST** include:
+
+1. Which agent(s) were called
+2. Why each agent was selected
+3. Key findings from each agent
+4. How results were integrated
+5. What was verified (tests/checks) and residual risks
+
 ### Mandatory Research Phase
 >**Constraint**: Before complex implementation/optimization, perform research first.
 
@@ -147,11 +198,10 @@ Before taking any action (either tool calls _or_ responses to the user), you mus
 
 | Task Domain | Specialist Agent | Notes |
 | :--- | :--- | :--- |
-| Documentation | `@doc-writer`, `@doc-reviewer` | Reports, technical docs |
-| Research | `@research-*` | Multiple perspectives recommended |
-| Code Quality | `@code-quality-reviewer` | Standards compliance |
 | Planning | `@planner-*` | Resource/timeline planning |
-| Architecture | `@architect` | System design |
+| Rubric-based verification | `@rubric-verifier` | Multi-perspective quality checks |
+| Mathematical correctness | `@math-reviewer` | Equation/derivation/consistency validation |
+| Experience curation | `@experience-curator` | Extract reusable patterns from history |
 
 See `AGENTS.md` for full agent list and descriptions.
 
