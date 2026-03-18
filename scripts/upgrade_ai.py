@@ -11,6 +11,7 @@ Checks for updates to the Prompt_Template repository and upgrades the local copy
 """
 
 import json
+import filecmp
 import shutil
 import subprocess
 import sys
@@ -27,11 +28,15 @@ class TemplateUpgrader:
     def __init__(self, repo_root: Path, ignore_delay: bool = False):
         self.repo_root = repo_root
         self.temp_dir = repo_root / "temp" / "upgrade_tmp"
+        self.self_update_dir = repo_root / "temp" / "upgrade_self"
+        self.self_update_file = self.self_update_dir / "upgrade_ai.py"
         self.version_file = repo_root / "LAST_VERSION.json"
         self.last_check_file = repo_root / ".copilot-memory" / "upgrade_last_check.txt"
         self.remote_url = "https://github.com/goemktg/Prompt_Template.git"
         self.version_api = "https://raw.githubusercontent.com/goemktg/Prompt_Template/main/LAST_VERSION.json"
+        self.upgrade_script_rel_path = Path("scripts") / "upgrade_ai.py"
         self.ignore_delay = ignore_delay
+        self.self_update_pending = False
         
     def _ensure_check_file_dir(self):
         """Create .copilot-memory directory if it doesn't exist."""
@@ -130,6 +135,81 @@ class TemplateUpgrader:
         for file in cloned_repo.rglob("*.template.md"):
             template_files.add(file.relative_to(cloned_repo))
         return template_files
+
+    def _is_upgrade_script(self, rel_path: Path) -> bool:
+        """Check whether the path points to this upgrade script."""
+        return rel_path.as_posix() == self.upgrade_script_rel_path.as_posix()
+
+    def _stage_self_update(self, source_file: Path) -> bool:
+        """Stage an updated upgrade script to be applied after this process exits."""
+        local_script = self.repo_root / self.upgrade_script_rel_path
+
+        try:
+            if local_script.exists() and filecmp.cmp(source_file, local_script, shallow=False):
+                return True
+        except OSError:
+            pass
+
+        try:
+            self.self_update_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source_file, self.self_update_file)
+            self.self_update_pending = True
+            return True
+        except IOError as e:
+            print(f"\nWARNING: Failed to stage self update: {e}")
+            return False
+
+    def _apply_self_update(self) -> bool:
+        """Apply the staged upgrade script update via a detached helper process."""
+        if not self.self_update_pending or not self.self_update_file.exists():
+            return True
+
+        helper_code = (
+            "import shutil, sys, time; "
+            "from pathlib import Path; "
+            "src = Path(sys.argv[1]); "
+            "dst = Path(sys.argv[2]); "
+            "for _ in range(40): "
+            "\n    try:"
+            "\n        if not src.exists():"
+            "\n            break"
+            "\n        dst.parent.mkdir(parents=True, exist_ok=True)"
+            "\n        shutil.copy2(src, dst)"
+            "\n        src.unlink()"
+            "\n        break"
+            "\n    except (PermissionError, OSError):"
+            "\n        time.sleep(0.25)"
+        )
+
+        popen_kwargs = {
+            "args": [
+                sys.executable,
+                "-c",
+                helper_code,
+                str(self.self_update_file),
+                str(self.repo_root / self.upgrade_script_rel_path),
+            ],
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.DEVNULL,
+        }
+
+        if sys.platform == "win32":
+            popen_kwargs["creationflags"] = (
+                subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+            )
+        else:
+            popen_kwargs["start_new_session"] = True
+
+        try:
+            subprocess.Popen(**popen_kwargs)
+            print("Scheduled self-update for scripts/upgrade_ai.py")
+            return True
+        except OSError as e:
+            print(
+                "WARNING: Failed to auto-apply upgrade_ai.py update. "
+                f"Replace scripts/upgrade_ai.py with {self.self_update_file} manually: {e}"
+            )
+            return True
     
     def _should_skip_file(self, rel_path: Path, existing_templates: set, remote_templates: set) -> bool:
         """Determine if a file should be skipped during copy."""
@@ -137,11 +217,13 @@ class TemplateUpgrader:
         if str(rel_path).endswith(".template.md"):
             if rel_path not in existing_templates and rel_path in remote_templates:
                 return True
-        
-        # Skip .git directory and upgrade script
-        if ".git" in rel_path.parts:
+
+        # Preserve local .gitignore if the project already has one
+        if rel_path == Path(".gitignore") and (self.repo_root / rel_path).exists():
             return True
-        if str(rel_path) == "scripts\\upgrade_ai.py" or str(rel_path) == "scripts/upgrade_ai.py":
+        
+        # Skip .git directory
+        if ".git" in rel_path.parts:
             return True
         
         return False
@@ -160,12 +242,20 @@ class TemplateUpgrader:
         print("Copying files...", end=" ")
         copied_count = 0
         skipped_count = 0
+        staged_count = 0
         
         for cloned_file in cloned_repo.rglob("*"):
             if cloned_file.is_dir():
                 continue
             
             rel_path = cloned_file.relative_to(cloned_repo)
+
+            if self._is_upgrade_script(rel_path):
+                if self._stage_self_update(cloned_file):
+                    staged_count += 1
+                else:
+                    return False
+                continue
             
             if self._should_skip_file(rel_path, existing_templates, remote_templates):
                 skipped_count += 1
@@ -180,7 +270,7 @@ class TemplateUpgrader:
             except IOError as e:
                 print(f"\nWARNING: Failed to copy {rel_path}: {e}")
         
-        print(f"Done ({copied_count} copied, {skipped_count} skipped)")
+        print(f"Done ({copied_count} copied, {skipped_count} skipped, {staged_count} staged)")
         return True
     
     def _cleanup_temp(self):
@@ -232,6 +322,9 @@ class TemplateUpgrader:
             return False
         
         if not self._cleanup_temp():
+            return False
+
+        if not self._apply_self_update():
             return False
         
         print("=" * 60)
