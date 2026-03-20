@@ -5,13 +5,20 @@ AI Template Upgrade Script
 Checks for updates to the Prompt_Template repository and upgrades the local copy.
 - Checks for new versions daily
 - Clones the remote repository
-- Overwrites local files with updated versions
+- Overwrites local files with updated versions (upgrade_ai.py handled separately)
 - Preserves template.md files if they don't exist locally
-- Cleans up temporary files
+
+Self-update flow:
+  upgrade_ai.py        → clones repo, copies all files except upgrade_ai.py,
+                         stages new upgrade_ai.py to temp/, writes and launches
+                         temp/self_upgrade_helper.py, then exits.
+  self_upgrade_helper  → replaces scripts/upgrade_ai.py with the staged copy,
+                         runs the new script with --deleteHelper.
+  upgrade_ai.py        → (--deleteHelper mode) deletes temp/self_upgrade_helper.py
+                         and exits.
 """
 
 import json
-import filecmp
 import shutil
 import subprocess
 import sys
@@ -21,312 +28,334 @@ from typing import Optional
 import urllib.request
 import urllib.error
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+_REMOTE_URL  = "https://github.com/goemktg/Prompt_Template.git"
+_VERSION_API = "https://raw.githubusercontent.com/goemktg/Prompt_Template/main/LAST_VERSION.json"
+_SCRIPT_REL  = Path("scripts") / "upgrade_ai.py"   # relative to repo root
+_HELPER_NAME = "self_upgrade_helper.py"
+_STAGED_NAME = "upgrade_ai_staged.py"
+
 
 class TemplateUpgrader:
     """Manages template upgrades from remote repository."""
-    
+
     def __init__(self, repo_root: Path, ignore_delay: bool = False):
-        self.repo_root = repo_root
-        self.temp_dir = repo_root / "temp" / "upgrade_tmp"
-        self.self_update_dir = repo_root / "temp" / "upgrade_self"
-        self.self_update_file = self.self_update_dir / "upgrade_ai.py"
-        self.version_file = repo_root / "LAST_VERSION.json"
+        self.repo_root       = repo_root
+        self.temp_base       = repo_root / "temp"
+        self.clone_dir       = self.temp_base / "upgrade_tmp"
+        self.staged_script   = self.temp_base / _STAGED_NAME
+        self.helper_script   = self.temp_base / _HELPER_NAME
+        self.version_file    = repo_root / "LAST_VERSION.json"
         self.last_check_file = repo_root / ".copilot-memory" / "upgrade_last_check.txt"
-        self.remote_url = "https://github.com/goemktg/Prompt_Template.git"
-        self.version_api = "https://raw.githubusercontent.com/goemktg/Prompt_Template/main/LAST_VERSION.json"
-        self.upgrade_script_rel_path = Path("scripts") / "upgrade_ai.py"
-        self.ignore_delay = ignore_delay
-        self.self_update_pending = False
-        
-    def _ensure_check_file_dir(self):
-        """Create .copilot-memory directory if it doesn't exist."""
+        self.ignore_delay    = ignore_delay
+
+    # ------------------------------------------------------------------
+    # Version / timing
+    # ------------------------------------------------------------------
+
+    def _ensure_check_dir(self):
         self.last_check_file.parent.mkdir(parents=True, exist_ok=True)
-    
+
     def _get_last_check_time(self) -> Optional[datetime]:
-        """Get the time of the last version check."""
-        self._ensure_check_file_dir()
+        self._ensure_check_dir()
         if not self.last_check_file.exists():
             return None
         try:
-            with open(self.last_check_file, 'r') as f:
-                timestamp = float(f.read().strip())
-                return datetime.fromtimestamp(timestamp)
+            with open(self.last_check_file) as f:
+                return datetime.fromtimestamp(float(f.read().strip()))
         except (ValueError, IOError):
             return None
-    
+
     def _save_check_time(self):
-        """Save current time as last check time."""
-        self._ensure_check_file_dir()
-        with open(self.last_check_file, 'w') as f:
+        self._ensure_check_dir()
+        with open(self.last_check_file, "w") as f:
             f.write(str(datetime.now().timestamp()))
-    
+
     def _should_check_for_updates(self) -> bool:
-        """Check if 24 hours have passed since last check."""
         if self.ignore_delay:
             return True
-        
-        last_check = self._get_last_check_time()
-        if last_check is None:
+        last = self._get_last_check_time()
+        if last is None:
             return True
-        
-        time_since_check = datetime.now() - last_check
-        if time_since_check < timedelta(days=1):
-            print(f"Already checked for updates today ({time_since_check.total_seconds() / 3600:.1f} hours ago).")
+        elapsed = datetime.now() - last
+        if elapsed < timedelta(days=1):
+            print(f"Already checked for updates today ({elapsed.total_seconds() / 3600:.1f} hours ago).")
             print("Run again tomorrow or use --ignoreDelay option to force check.")
             return False
         return True
-    
+
+    def _get_local_version(self) -> str:
+        try:
+            with open(self.version_file) as f:
+                return json.load(f).get("version", "unknown")
+        except (FileNotFoundError, json.JSONDecodeError):
+            return "unknown"
+
     def _fetch_remote_version(self) -> Optional[str]:
-        """Fetch the latest version from remote repository."""
         try:
             print("Checking remote version...", end=" ")
-            with urllib.request.urlopen(self.version_api, timeout=10) as response:
-                data = json.loads(response.read().decode())
-                version = data.get("version")
+            with urllib.request.urlopen(_VERSION_API, timeout=10) as resp:
+                version = json.loads(resp.read().decode()).get("version")
                 print(f"Remote version: {version}")
                 return version
         except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError) as e:
             print(f"ERROR: Failed to fetch remote version: {e}")
             return None
-    
-    def _get_local_version(self) -> str:
-        """Get the local version from LAST_VERSION.json."""
-        try:
-            with open(self.version_file, 'r') as f:
-                data = json.loads(f.read())
-                return data.get("version", "unknown")
-        except (FileNotFoundError, json.JSONDecodeError):
-            return "unknown"
-    
-    def _clone_repository(self):
-        """Clone the remote repository to temp directory."""
-        print(f"Cloning repository to {self.temp_dir}...", end=" ")
-        
-        # Remove existing temp directory
-        if self.temp_dir.exists():
-            shutil.rmtree(self.temp_dir)
-        
-        self.temp_dir.parent.mkdir(parents=True, exist_ok=True)
-        
+
+    # ------------------------------------------------------------------
+    # Clone
+    # ------------------------------------------------------------------
+
+    def _clone_repository(self) -> bool:
+        print("Cloning repository...", end=" ")
+        if self.clone_dir.exists():
+            shutil.rmtree(self.clone_dir)
+        self.clone_dir.parent.mkdir(parents=True, exist_ok=True)
         try:
             subprocess.run(
-                ["git", "clone", "--depth", "1", self.remote_url, str(self.temp_dir)],
+                ["git", "clone", "--depth", "1", _REMOTE_URL, str(self.clone_dir)],
                 check=True,
                 capture_output=True,
-                timeout=60
+                timeout=60,
             )
             print("Done")
             return True
         except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
             print(f"ERROR: Failed to clone repository: {e}")
             return False
-    
+
+    # ------------------------------------------------------------------
+    # File copy (upgrade_ai.py excluded)
+    # ------------------------------------------------------------------
+
     def _get_existing_templates(self) -> set:
-        """Get list of existing .template.md files in local repo."""
-        template_files = set()
-        for file in self.repo_root.rglob("*.template.md"):
-            template_files.add(file.relative_to(self.repo_root))
-        return template_files
-    
+        return {f.relative_to(self.repo_root) for f in self.repo_root.rglob("*.template.md")}
+
     def _get_remote_templates(self) -> set:
-        """Get list of .template.md files in cloned repo."""
-        template_files = set()
-        cloned_repo = self.temp_dir
-        for file in cloned_repo.rglob("*.template.md"):
-            template_files.add(file.relative_to(cloned_repo))
-        return template_files
+        return {f.relative_to(self.clone_dir) for f in self.clone_dir.rglob("*.template.md")}
 
-    def _is_upgrade_script(self, rel_path: Path) -> bool:
-        """Check whether the path points to this upgrade script."""
-        return rel_path.as_posix() == self.upgrade_script_rel_path.as_posix()
-
-    def _stage_self_update(self, source_file: Path) -> bool:
-        """Stage an updated upgrade script to be applied after this process exits."""
-        local_script = self.repo_root / self.upgrade_script_rel_path
-
-        try:
-            if local_script.exists() and filecmp.cmp(source_file, local_script, shallow=False):
-                return True
-        except OSError:
-            pass
-
-        try:
-            self.self_update_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source_file, self.self_update_file)
-            self.self_update_pending = True
+    def _should_skip_file(self, rel: Path, existing_tpl: set, remote_tpl: set) -> bool:
+        # upgrade_ai.py is handled separately via self-update flow
+        if rel == _SCRIPT_REL:
             return True
-        except IOError as e:
-            print(f"\nWARNING: Failed to stage self update: {e}")
-            return False
-
-    def _apply_self_update(self) -> bool:
-        """Apply the staged upgrade script update via a detached helper process."""
-        if not self.self_update_pending or not self.self_update_file.exists():
+        # template files that don't already exist locally
+        if rel.name.endswith(".template.md") and rel not in existing_tpl and rel in remote_tpl:
             return True
-
-        helper_code = (
-            "import shutil, sys, time; "
-            "from pathlib import Path; "
-            "src = Path(sys.argv[1]); "
-            "dst = Path(sys.argv[2]); "
-            "for _ in range(40): "
-            "\n    try:"
-            "\n        if not src.exists():"
-            "\n            break"
-            "\n        dst.parent.mkdir(parents=True, exist_ok=True)"
-            "\n        shutil.copy2(src, dst)"
-            "\n        src.unlink()"
-            "\n        break"
-            "\n    except (PermissionError, OSError):"
-            "\n        time.sleep(0.25)"
-        )
-
-        popen_kwargs = {
-            "args": [
-                sys.executable,
-                "-c",
-                helper_code,
-                str(self.self_update_file),
-                str(self.repo_root / self.upgrade_script_rel_path),
-            ],
-            "stdout": subprocess.DEVNULL,
-            "stderr": subprocess.DEVNULL,
-        }
-
-        if sys.platform == "win32":
-            popen_kwargs["creationflags"] = (
-                subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
-            )
-        else:
-            popen_kwargs["start_new_session"] = True
-
-        try:
-            subprocess.Popen(**popen_kwargs)
-            print("Scheduled self-update for scripts/upgrade_ai.py")
+        # preserve existing local .gitignore
+        if rel == Path(".gitignore") and (self.repo_root / rel).exists():
             return True
-        except OSError as e:
-            print(
-                "WARNING: Failed to auto-apply upgrade_ai.py update. "
-                f"Replace scripts/upgrade_ai.py with {self.self_update_file} manually: {e}"
-            )
+        # skip .git metadata
+        if ".git" in rel.parts:
             return True
-    
-    def _should_skip_file(self, rel_path: Path, existing_templates: set, remote_templates: set) -> bool:
-        """Determine if a file should be skipped during copy."""
-        # Skip template.md files that don't exist locally
-        if str(rel_path).endswith(".template.md"):
-            if rel_path not in existing_templates and rel_path in remote_templates:
-                return True
-
-        # Preserve local .gitignore if the project already has one
-        if rel_path == Path(".gitignore") and (self.repo_root / rel_path).exists():
-            return True
-        
-        # Skip .git directory
-        if ".git" in rel_path.parts:
-            return True
-        
         return False
-    
-    def _copy_files(self):
-        """Copy files from cloned repo to local repo."""
-        cloned_repo = self.temp_dir
-        
-        if not cloned_repo.exists():
+
+    def _copy_files(self) -> bool:
+        if not self.clone_dir.exists():
             print("ERROR: Cloned repository not found")
             return False
-        
-        existing_templates = self._get_existing_templates()
-        remote_templates = self._get_remote_templates()
-        
-        print("Copying files...", end=" ")
-        copied_count = 0
-        skipped_count = 0
-        staged_count = 0
-        
-        for cloned_file in cloned_repo.rglob("*"):
-            if cloned_file.is_dir():
-                continue
-            
-            rel_path = cloned_file.relative_to(cloned_repo)
 
-            if self._is_upgrade_script(rel_path):
-                if self._stage_self_update(cloned_file):
-                    staged_count += 1
-                else:
-                    return False
+        existing_tpl = self._get_existing_templates()
+        remote_tpl   = self._get_remote_templates()
+        print("Copying files...", end=" ")
+        copied = skipped = 0
+
+        for src in self.clone_dir.rglob("*"):
+            if src.is_dir():
                 continue
-            
-            if self._should_skip_file(rel_path, existing_templates, remote_templates):
-                skipped_count += 1
+            rel = src.relative_to(self.clone_dir)
+            if self._should_skip_file(rel, existing_tpl, remote_tpl):
+                skipped += 1
                 continue
-            
-            local_file = self.repo_root / rel_path
-            local_file.parent.mkdir(parents=True, exist_ok=True)
-            
+            dst = self.repo_root / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
             try:
-                shutil.copy2(cloned_file, local_file)
-                copied_count += 1
+                shutil.copy2(src, dst)
+                copied += 1
             except IOError as e:
-                print(f"\nWARNING: Failed to copy {rel_path}: {e}")
-        
-        print(f"Done ({copied_count} copied, {skipped_count} skipped, {staged_count} staged)")
+                print(f"\nWARNING: Failed to copy {rel}: {e}")
+
+        print(f"Done ({copied} copied, {skipped} skipped)")
         return True
-    
-    def _cleanup_temp(self):
-        """Delete temporary directory."""
-        print("Cleaning up temporary files...", end=" ")
+
+    # ------------------------------------------------------------------
+    # Stage new upgrade_ai.py before clone cleanup
+    # ------------------------------------------------------------------
+
+    def _stage_new_script(self) -> bool:
+        """Copy the new upgrade_ai.py from the clone to temp/ before cleanup."""
+        cloned = self.clone_dir / _SCRIPT_REL
+        if not cloned.exists():
+            print("WARNING: upgrade_ai.py not found in cloned repo; skipping self-update.")
+            return True  # non-fatal
         try:
-            if self.temp_dir.exists():
-                shutil.rmtree(self.temp_dir)
+            shutil.copy2(cloned, self.staged_script)
+            return True
+        except IOError as e:
+            print(f"WARNING: Failed to stage new upgrade_ai.py: {e}")
+            return False
+
+    # ------------------------------------------------------------------
+    # Cleanup
+    # ------------------------------------------------------------------
+
+    def _cleanup_clone(self) -> bool:
+        print("Cleaning up clone...", end=" ")
+        try:
+            if self.clone_dir.exists():
+                shutil.rmtree(self.clone_dir)
             print("Done")
             return True
         except Exception as e:
-            print(f"WARNING: Failed to cleanup temp directory: {e}")
+            print(f"WARNING: Failed to remove clone dir: {e}")
             return False
-    
+
+    def _cleanup_stale_artifacts(self):
+        """Remove leftover files from a previous interrupted run."""
+        for path in (self.helper_script, self.staged_script):
+            try:
+                if path.exists():
+                    path.unlink()
+            except Exception:
+                pass
+
+    # ------------------------------------------------------------------
+    # Self-update: write helper and launch it
+    # ------------------------------------------------------------------
+
+    def _write_helper_script(self) -> bool:
+        """Write temp/self_upgrade_helper.py."""
+        staged_name  = _STAGED_NAME
+        script_rel   = _SCRIPT_REL.as_posix()   # 'scripts/upgrade_ai.py'
+
+        helper_code = f"""\
+#!/usr/bin/env python3
+\"\"\"
+Self-update helper for upgrade_ai.py.
+Generated by upgrade_ai.py – do not edit manually.
+
+Steps:
+  1. Replace scripts/upgrade_ai.py with {staged_name} (staged new version).
+  2. Run the new script with --deleteHelper so it removes this file.
+\"\"\"
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+
+def main():
+    here      = Path(__file__).parent          # temp/
+    repo_root = here.parent                    # repo root
+    staged    = here / {repr(staged_name)}
+    target    = repo_root / {repr(script_rel)}
+
+    if not staged.exists():
+        print(f"ERROR: Staged script not found: {{staged}}")
+        sys.exit(1)
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(staged, target)
+    staged.unlink()
+    print("upgrade_ai.py updated successfully.")
+
+    # Ask the new script to clean up this helper file
+    subprocess.run([sys.executable, str(target), "--deleteHelper"], check=True)
+
+
+if __name__ == "__main__":
+    main()
+"""
+        try:
+            self.helper_script.write_text(helper_code, encoding="utf-8")
+            return True
+        except IOError as e:
+            print(f"ERROR: Failed to write helper script: {e}")
+            return False
+
+    def _launch_helper(self) -> bool:
+        """Run temp/self_upgrade_helper.py and wait for it to finish."""
+        try:
+            subprocess.run(
+                [sys.executable, str(self.helper_script)],
+                check=True,
+            )
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"WARNING: Helper exited with error code {e.returncode}")
+            print(f"Manual fix: copy {self.staged_script} -> {self.repo_root / _SCRIPT_REL}")
+            return True  # non-fatal
+        except OSError as e:
+            print(f"WARNING: Failed to launch helper: {e}")
+            print(f"Manual fix: copy {self.staged_script} -> {self.repo_root / _SCRIPT_REL}")
+            return True  # non-fatal
+
+    # ------------------------------------------------------------------
+    # --deleteHelper mode
+    # ------------------------------------------------------------------
+
+    def delete_helper(self):
+        """Remove temp/self_upgrade_helper.py (called by the new script after self-update)."""
+        if self.helper_script.exists():
+            try:
+                self.helper_script.unlink()
+                print(f"Cleaned up {_HELPER_NAME}")
+            except Exception as e:
+                print(f"WARNING: Could not delete {_HELPER_NAME}: {e}")
+
+    # ------------------------------------------------------------------
+    # Main upgrade flow
+    # ------------------------------------------------------------------
+
     def upgrade(self) -> bool:
-        """Execute the upgrade process."""
         print("=" * 60)
         print("AI Template Upgrade Script")
         print("=" * 60)
-        
-        # Check if we should update today
+
+        # Remove any leftover artifacts from a previous interrupted run
+        self._cleanup_stale_artifacts()
+
         if not self._should_check_for_updates():
             return True
-        
-        # Get versions
+
         local_version = self._get_local_version()
         print(f"Local version: {local_version}")
-        
+
         remote_version = self._fetch_remote_version()
         if remote_version is None:
             print("Could not fetch remote version. Aborting upgrade.")
             return False
-        
-        # Save check time
+
         self._save_check_time()
-        
-        # Check if update is needed
+
         if local_version == remote_version:
             print(f"Already up to date (version {local_version})")
             return True
-        
+
         print(f"Update available: {local_version} -> {remote_version}")
-        
-        # Clone and update
+
         if not self._clone_repository():
             return False
-        
-        if not self._copy_files():
-            return False
-        
-        if not self._cleanup_temp():
+
+        # Stage new upgrade_ai.py BEFORE cleanup so the file is still accessible
+        if not self._stage_new_script():
+            self._cleanup_clone()
             return False
 
-        if not self._apply_self_update():
+        if not self._copy_files():
+            self._cleanup_clone()
             return False
-        
+
+        if not self._cleanup_clone():
+            return False
+
+        # Run helper synchronously – it replaces upgrade_ai.py and cleans up
+        if self.staged_script.exists():
+            if not self._write_helper_script():
+                return False
+            self._launch_helper()
+
         print("=" * 60)
         print(f"Upgrade completed successfully!")
         print(f"Template updated to version {remote_version}")
@@ -335,26 +364,22 @@ class TemplateUpgrader:
 
 
 def main():
-    """Main entry point."""
     import argparse
-    
-    parser = argparse.ArgumentParser(
-        description="Upgrade AI Template from remote repository"
-    )
-    parser.add_argument(
-        "--ignoreDelay",
-        action="store_true",
-        help="Skip 24-hour check delay and force version check"
-    )
-    
+
+    parser = argparse.ArgumentParser(description="Upgrade AI Template from remote repository")
+    parser.add_argument("--ignoreDelay",  action="store_true", help="Skip 24-hour check delay")
+    parser.add_argument("--deleteHelper", action="store_true",
+                        help=f"Delete {_HELPER_NAME} and exit (called automatically after self-update)")
     args = parser.parse_args()
-    
-    # Find repository root
-    script_dir = Path(__file__).parent
-    repo_root = script_dir.parent
-    
+
+    repo_root = Path(__file__).parent.parent
+
     upgrader = TemplateUpgrader(repo_root, ignore_delay=args.ignoreDelay)
-    
+
+    if args.deleteHelper:
+        upgrader.delete_helper()
+        sys.exit(0)
+
     try:
         success = upgrader.upgrade()
         sys.exit(0 if success else 1)

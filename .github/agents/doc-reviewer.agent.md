@@ -161,6 +161,13 @@ For each section:
 - [ ] Important info in boxes/callouts
 - [ ] Consistent terminology
 - [ ] Consistent formatting
+- [ ] **Markdown linting**: No linting errors (per markdownlint standards)
+  - No trailing whitespace
+  - No multiple consecutive blank lines
+  - Proper heading format (space after #)
+  - Valid link/image syntax
+  - No bare URLs (must be in links or code blocks)
+  - List item format consistency
 
 **Audience Alignment:**
 - **For technical docs:** Assumes familiarity with the domain

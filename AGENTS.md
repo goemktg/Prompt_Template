@@ -226,7 +226,7 @@ description: 'Description of the skill and when it should be loaded.'
 
 | Agent | Description |
 | :--- | :--- |
-| `@orchestrator` | Autonomous Task Manager. Interprets commands, plans workflows, and delegates to specialized subagents. |
+| `@orchestrator` | Strategic Orchestration Planner. Interprets goals, designs workflow and subagent call sequence, and provides execution guidance for the main session. |
 | `@fixer` | Autonomous problem-solving & execution agent. Diagnoses issues, implements fixes, executes code/tests, and verifies solutions. |
 | `@doc-writer` | Documentation Writer. Creates well-structured documentation from requirements. |
 | `@doc-reviewer` | Documentation Reviewer. Reviews documentation for clarity and completeness. |

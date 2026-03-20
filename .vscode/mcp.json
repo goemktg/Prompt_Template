@@ -2,10 +2,8 @@
     "servers": {
         "arxiv-mcp-server": {
             "type": "stdio",
-            "command": "cmd.exe",
+            "command": "uv",
             "args": [
-                "/c",
-                "uv",
                 "tool",
                 "run",
                 "arxiv-mcp-server",
@@ -16,25 +14,21 @@
         },
         "context7": {
             "type": "stdio",
-            "command": "cmd.exe",
+            "command": "npx",
             "args": [
-                "/c",
-                "npx",
                 "-y",
                 "@upstash/context7-mcp@latest"
             ]
         },
         "memory": {
-            "command": "cmd.exe",
+            "command": "uv",
             "args": [
-                "/c",
-                "uv",
-                "tool",
-                "run",
-                "--from",
-                "mcp-memory-service",
-                "memory",
-                "server"
+            "tool",
+            "run",
+            "--from",
+            "mcp-memory-service",
+            "memory",
+            "server"
             ],
             "env": {
             "MCP_MEMORY_STORAGE_BACKEND": "sqlite_vec",
@@ -46,10 +40,8 @@
         },
         "sequentialthinking": {
             "type": "stdio",
-            "command": "cmd.exe",
+            "command": "npx",
             "args": [
-                "/c",
-                "npx",
                 "-y",
                 "@modelcontextprotocol/server-sequential-thinking@latest"
             ]

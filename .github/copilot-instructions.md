@@ -132,47 +132,88 @@ Before taking any action (either tool calls _or_ responses to the user), you mus
 1.  **MUST USE** `runSubagent` to invoke specialized agents.
 2.  **NEVER** simulate agent outputs. Always invoke and wait for results.
 3.  **Parallel Invocation**: Call independent agents simultaneously.
+4.  **Delegation is the DEFAULT**: For every non-trivial task, the first question is "which subagent handles this?" — not "can I do this myself?"
 
 ### Subagent Auto-Invocation Policy (Strict)
 
-#### 1) Mandatory Invocation Triggers
-You **MUST** invoke at least one specialized subagent via `runSubagent` when **ANY** of the following is true:
+#### 0) Default Delegation Principle
+**Subagent delegation is the DEFAULT mode for ALL substantive tasks, every turn.**
+Only handle a task without subagents if it is **purely conversational** (e.g., answering a factual question in one sentence) or if all subagent tooling is unavailable.
 
-1. The task requires 3+ distinct phases (research, implementation, verification, documentation, etc.).
-2. The task spans 2+ domains (for example, architecture + code + QA).
-3. The user asks for optimization, root-cause analysis, or production-quality validation.
-4. The expected work touches 3+ files or requires non-trivial refactoring.
-5. The task needs external verification (documentation, papers, or web references) before implementation.
+**Decision flow (apply in order):**
+1. Is the task purely conversational with no file/code changes? → Answer directly.
+2. Otherwise → Identify the appropriate subagent(s) and delegate. Do NOT do the work yourself.
+
+#### 1) Mandatory Invocation Triggers
+You **MUST** invoke at least one specialized subagent via `runSubagent` when **ANY** of the following is true (this list is non-exhaustive — when in doubt, delegate):
+
+1. Any code is being written, read for understanding, or modified.
+2. Any file is being created, edited, reviewed, or restructured.
+3. Any bug, error, failure, or unexpected behavior is being investigated or fixed.
+4. Any architecture, design, or planning decision is being made.
+5. Any documentation is being created, updated, or reviewed.
+6. Any research, analysis, or external verification is required.
+7. The task requires 2+ distinct steps, phases, or subtasks.
+8. The task spans 2+ domains (e.g., architecture + code + QA).
+9. The user asks for optimization, root-cause analysis, or production-quality validation.
+10. The expected work touches 2+ files or involves any refactoring.
+11. The task needs external verification (documentation, papers, or web references).
 
 If a trigger is met, do **NOT** proceed as a single-agent workflow unless blocked by tooling or user constraints.
 
-#### 2) Agent Selection Rules
-- Architecture/design ambiguity: use `@architect`
-- Bug diagnosis/fix execution: use `@fixer`
-- Quality gate/review: use `@code-quality-reviewer`
-- Regression/test reliability: use `@qa-regression-sentinel`
-- Documentation generation/review: use `@doc-writer` / `@doc-reviewer`
-- Research/theory/implementation feasibility: use `@research-gpt` / `@research-gemini` / `@research-claude`
+#### 2) Agent Selection Rules (Comprehensive)
+
+| Task Type | Subagent | Example Triggers |
+|-----------|----------|-----------------|
+| New code / feature implementation | `@code-generator` | "implement X", "add feature Y", "write a function for Z" |
+| Bug / error / failure diagnosis & fix | `@fixer` | "fix this", "error in", "not working", "debug" |
+| Architecture / design planning | `@architect` | "design", "how should I structure", "best approach for" |
+| Code review / quality gate | `@code-quality-reviewer` | "review my code", "is this good?", "check for issues" |
+| Regression / test reliability | `@qa-regression-sentinel` | "run tests", "check for regressions", "flaky test" |
+| Documentation writing | `@doc-writer` | "write docs", "document this", "create README" |
+| Documentation review | `@doc-reviewer` | "review this doc", "check documentation" |
+| Theory / concept research | `@research-gpt` | "explain theory behind", "what is X", "prior work on" |
+| Implementation / API research | `@research-gemini` | "how to implement X with library Y", "API usage for" |
+| System / safety / risk research | `@research-claude` | "risks of", "constraints for", "safety analysis" |
+| Quantitative / feasibility planning | `@planner-gemini` | "is this feasible?", "estimate resources for" |
+| Architecture / strategy planning | `@planner-gpt` | "plan the architecture", "design strategy for" |
+| Risk / QA planning | `@planner-claude` | "what could go wrong?", "risk assessment" |
+| Math / equation verification | `@math-reviewer` | "verify formula", "check math", "is this equation correct?" |
+| Rubric-based quality verification | `@rubric-verifier` | "validate against criteria", "multi-perspective check" |
+| Pattern extraction from history | `@experience-curator` | "what did we learn?", "extract patterns from" |
+| Creative / UX / divergent ideas | `@idea-generator-claude` | "brainstorm ideas for", "alternative approaches" |
+| Codebase exploration / Q&A | `@Explore` | "where is X defined?", "how does Y work?" |
+| Complex orchestration | `@orchestrator` | Build a multi-phase execution blueprint (main session executes actual subagent calls) |
+
+When multiple agents apply, delegate to all relevant agents (in parallel if independent).
+
+Special rule for `@orchestrator`:
+- `@orchestrator` is planning-only.
+- It returns task decomposition, call order, and per-agent prompt guidance.
+- The main session performs actual `runSubagent` calls.
 
 #### 3) Parallel Delegation
-If subtasks are independent, invoke subagents in parallel.
+If subtasks are independent, invoke subagents in **parallel** (simultaneous `runSubagent` calls).
 
 Examples:
 - research + architecture
 - implementation + QA validation
 - documentation writing + code-quality review
+- bug fix + regression test
+- multiple independent file analyses
 
 #### 4) Delegation-First Workflow
-For complex tasks, follow this order:
+For every substantive task, follow this order:
 
-1. Decompose the task.
-2. Delegate to specialized subagents.
-3. Integrate subagent outputs.
-4. Run validation.
-5. Report with evidence.
+1. **Identify**: Which subagent(s) are suited for this task? (use the table above)
+2. **Decompose**: Break the task into subtasks; assign each to an agent.
+3. **Delegate**: Invoke all relevant subagents (in parallel where possible).
+4. **Integrate**: Combine outputs from all subagents.
+5. **Validate**: Run `@code-quality-reviewer`, `@qa-regression-sentinel`, or `@rubric-verifier` as appropriate.
+6. **Report**: Summarize results and any residual risks.
 
 #### 5) Anti-Skipping Guard
-If no subagent is invoked for a trigger-matching task, the assistant **MUST** explicitly state why (tool limits, blocked context, or user constraints) and propose an alternative delegation plan.
+If no subagent is invoked for a task that is not purely conversational, the assistant **MUST** explicitly state why (tool limits, blocked context, or user constraints) and propose an alternative delegation plan. Silence on this is not acceptable.
 
 #### 6) Output Requirements
 When subagents are used, the final response **MUST** include:
