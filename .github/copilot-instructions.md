@@ -44,6 +44,10 @@ All tools output in **JSON format** to prevent parsing errors.
 | 2 | CLI Fallback | MCP unavailable |
 | 3 | Manual Execution | Human-only (never for AI agents) |
 
+### Terminal Usage
+
+If possible, do not use terminal commands. Prefer MCP tools and editor-native capabilities first, and only fall back to terminal commands when no suitable alternative exists.
+
 **MCP Tools (Preferred):**
 | Tool | Purpose |
 |------|------|
