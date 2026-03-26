@@ -8,7 +8,6 @@ tools:
   - read
   - search
   - web
-  - 'arxiv-mcp-server/*'
   - 'context7/*'
   - 'memory/*'
   - 'sequentialthinking/*'

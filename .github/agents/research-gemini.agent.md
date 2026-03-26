@@ -6,8 +6,6 @@ model: Claude Sonnet 4.5 (copilot)
 target: vscode
 user-invocable: false
 tools:
-  - arxiv-mcp-server/search_papers
-  - arxiv-mcp-server/read_paper
   - context7/resolve-library-id
   - context7/query-docs
   - memory/memory_store

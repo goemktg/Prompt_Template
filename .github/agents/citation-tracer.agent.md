@@ -7,7 +7,6 @@ user-invocable: false
 tools:
   - read
   - context7/*
-  - arxiv-mcp-server/*
   - memory/*
   - sequentialthinking/*
   - ms-vscode.vscode-websearchforcopilot/websearch

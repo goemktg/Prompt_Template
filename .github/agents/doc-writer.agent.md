@@ -222,6 +222,10 @@ Before generating any documentation:
    - Are there known problematic areas?
    - What setup gotchas were discovered before?
 
+### Mandatory Validation Gate (After Any Documentation Edit)
+
+After creating or modifying documentation, you must invoke `@doc-reviewer` to validate clarity, accuracy, completeness, and consistency before delivery.
+
 ### Step 1: README.md (Project Overview)
 
 **Purpose**: First impression, quick orientation, link to deeper docs

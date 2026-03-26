@@ -1,9 +1,45 @@
 # GitHub Copilot Agent Instructions
 
-Refer to `documents/PROJECT.md` for project-specific details.
+## Four Core Files (Single Source of Truth)
 
-> **AI Agent Operation Manual**: When operating as an autonomous agent,
-> refer to `documents/AGENT_MANUAL.md` if available.
+These are the four core files for this template:
+- `.github/copilot-instructions.md`: Global coding/quality policy and agent behavior constraints
+- `documents/AGENT_MANUAL.md`: Operational procedures, runtime process, safety workflow, and reporting checklist
+- `AGENTS.md`: Agent/skill catalogs and customization file conventions
+- `documents/PROJECT.md`: Project-specific scope, decisions, commands, and overrides
+
+## PROJECT.md Precedence Rule
+
+If `documents/PROJECT.md` exists, use it as the primary source when understanding the current project.
+Project-specific guidance in `documents/PROJECT.md` overrides generic guidance in this file.
+
+## Required Reference Files
+
+When information from either file below is needed, you **MUST read the file first** before taking action.
+
+### `AGENTS.md`
+
+Contains:
+- Project overview and repository structure
+- Template files initialization workflow and checklist
+- Development workflow for agents, prompts, instructions, and skills
+- Available agents and available skills catalogs
+- Pull request review checklist and project adaptation guides
+
+Rule:
+- If the task requires agent catalogs, skill catalogs, customization file conventions, or template initialization workflow, **MUST read `AGENTS.md` first**.
+
+### `documents/AGENT_MANUAL.md`
+
+Contains:
+- Agent operation procedures and step-by-step workflow
+- Tool usage priorities and complex terminal execution policy
+- Documentation pipeline and memory usage rules
+- Safety rules, file conventions, error-handling process, and reporting checklist
+- Subagent calling rules and orchestrator chaining protocol
+
+Rule:
+- If the task requires operation procedures, runtime safety/process policy, error-handling workflow, or reporting/checklist standards, **MUST read `documents/AGENT_MANUAL.md` first**.
 
 ---
 
@@ -33,44 +69,19 @@ Refer to `documents/PROJECT.md` for project-specific details.
 
 ### Overview
 
-Project operations are performed via **MCP tools** (preferred) or CLI fallback.
-All tools output in **JSON format** to prevent parsing errors.
-
-### Tool Priority: MCP First
-
-| Priority | Method | When to Use |
-|----------|--------|-------------|
-| 1 | **MCP Tools** | Default - real-time, integrated |
-| 2 | CLI Fallback | MCP unavailable |
-| 3 | Manual Execution | Human-only (never for AI agents) |
-
-### Terminal Usage
-
-If possible, do not use terminal commands. Prefer MCP tools and editor-native capabilities first, and only fall back to terminal commands when no suitable alternative exists.
-
-**MCP Tools (Preferred):**
-| Tool | Purpose |
-|------|------|
-| `mcp_context7_*` | Library documentation lookup |
-| `mcp_memory_*` | Store/retrieve agent memory |
-| `mcp_arxiv_*` | Academic paper search |
-| `mcp_sequentialthinking` | Complex reasoning support |
+This file defines global coding and policy constraints.
+Operational tool usage procedures are defined in the operation manual.
 
 ### Required Procedures
 
 1. **Before complex tasks**: Check project context with semantic search
 2. **Create artifacts**: Generate in appropriate directories (see Structure section)
-3. **On failure**: Analyze with reasoning → Store findings in Memory MCP
+3. **On failure**: Follow the operation manual error-handling workflow
 
 ### Memory Management
 
-Use **Memory MCP** (`mcp_memory_*`) for all transient data:
-- Observations/Notes → `mcp_memory_store_memory`
-- Prior context lookup → `mcp_memory_search`
-- List all memories → `mcp_memory_list`
-- Memory quality check → `mcp_memory_quality`
-
-**DO NOT** create local `*.memory.md` files. Use Memory MCP exclusively.
+Use Memory MCP for transient data and do not create local `*.memory.md` files.
+For detailed memory workflow, tags, and documentation pipeline, follow the operation manual.
 
 ---
 
@@ -163,31 +174,13 @@ You **MUST** invoke at least one specialized subagent via `runSubagent` when **A
 10. The expected work touches 2+ files or involves any refactoring.
 11. The task needs external verification (documentation, papers, or web references).
 
+> **Scale threshold**: For changes ≤5 lines in a single file with one clear goal, handle directly without subagent overhead.
+
 If a trigger is met, do **NOT** proceed as a single-agent workflow unless blocked by tooling or user constraints.
 
-#### 2) Agent Selection Rules (Comprehensive)
+#### 2) Agent Selection Rules
 
-| Task Type | Subagent | Example Triggers |
-|-----------|----------|-----------------|
-| New code / feature implementation | `@code-generator` | "implement X", "add feature Y", "write a function for Z" |
-| Bug / error / failure diagnosis & fix | `@fixer` | "fix this", "error in", "not working", "debug" |
-| Architecture / design planning | `@architect` | "design", "how should I structure", "best approach for" |
-| Code review / quality gate | `@code-quality-reviewer` | "review my code", "is this good?", "check for issues" |
-| Regression / test reliability | `@qa-regression-sentinel` | "run tests", "check for regressions", "flaky test" |
-| Documentation writing | `@doc-writer` | "write docs", "document this", "create README" |
-| Documentation review | `@doc-reviewer` | "review this doc", "check documentation" |
-| Theory / concept research | `@research-gpt` | "explain theory behind", "what is X", "prior work on" |
-| Implementation / API research | `@research-gemini` | "how to implement X with library Y", "API usage for" |
-| System / safety / risk research | `@research-claude` | "risks of", "constraints for", "safety analysis" |
-| Quantitative / feasibility planning | `@planner-gemini` | "is this feasible?", "estimate resources for" |
-| Architecture / strategy planning | `@planner-gpt` | "plan the architecture", "design strategy for" |
-| Risk / QA planning | `@planner-claude` | "what could go wrong?", "risk assessment" |
-| Math / equation verification | `@math-reviewer` | "verify formula", "check math", "is this equation correct?" |
-| Rubric-based quality verification | `@rubric-verifier` | "validate against criteria", "multi-perspective check" |
-| Pattern extraction from history | `@experience-curator` | "what did we learn?", "extract patterns from" |
-| Creative / UX / divergent ideas | `@idea-generator-claude` | "brainstorm ideas for", "alternative approaches" |
-| Codebase exploration / Q&A | `@Explore` | "where is X defined?", "how does Y work?" |
-| Complex orchestration | `@orchestrator` | Build a multi-phase execution blueprint (main session executes actual subagent calls) |
+> See **[AGENTS.md § Available Agents](../../AGENTS.md#available-agents)** for the full task-type → agent mapping table with example triggers.
 
 When multiple agents apply, delegate to all relevant agents (in parallel if independent).
 
@@ -195,6 +188,21 @@ Special rule for `@orchestrator`:
 - `@orchestrator` is planning-only.
 - It returns task decomposition, call order, and per-agent prompt guidance.
 - The main session performs actual `runSubagent` calls.
+
+#### 2.1) Orchestrator-Chained Execution Protocol (Sequential)
+
+For multi-step substantive tasks, use this hand-off pattern:
+1. Call `@orchestrator` first to obtain a concrete execution plan.
+2. Convert plan to an execution queue with: `step_id`, `agent`, `prompt`, `dependencies`, `exit_criteria`.
+3. Execute dependency-linked steps **sequentially** with `runSubagent`.
+4. Run steps in parallel **only** when orchestrator marks them as independent.
+5. After each step, verify exit criteria before continuing.
+6. If a step fails, call `@orchestrator` again with failure context to replan, then resume.
+
+Required reporting for chained runs:
+- planned sequence vs executed sequence
+- per-step status (`completed`, `failed`, `replanned`)
+- final integration summary
 
 #### 3) Parallel Delegation
 If subtasks are independent, invoke subagents in **parallel** (simultaneous `runSubagent` calls).
@@ -211,7 +219,7 @@ For every substantive task, follow this order:
 
 1. **Identify**: Which subagent(s) are suited for this task? (use the table above)
 2. **Decompose**: Break the task into subtasks; assign each to an agent.
-3. **Delegate**: Invoke all relevant subagents (in parallel where possible).
+3. **Delegate**: Execute dependency-linked steps sequentially; parallelize only independent groups.
 4. **Integrate**: Combine outputs from all subagents.
 5. **Validate**: Run `@code-quality-reviewer`, `@qa-regression-sentinel`, or `@rubric-verifier` as appropriate.
 6. **Report**: Summarize results and any residual risks.
@@ -234,21 +242,6 @@ When subagents are used, the final response **MUST** include:
 1.  **Multi-perspective Research**: Use multiple research methods when available
 2.  **External Verification**: Use Context7 MCP, ArXiv MCP, or web search
 3.  **Explicit Citation**: Must cite actual papers/documentation/sources
-
----
-
-## 0.3. Specialized Agent Protocol
-
-**Use specialists over generalists when available.**
-
-| Task Domain | Specialist Agent | Notes |
-| :--- | :--- | :--- |
-| Planning | `@planner-*` | Resource/timeline planning |
-| Rubric-based verification | `@rubric-verifier` | Multi-perspective quality checks |
-| Mathematical correctness | `@math-reviewer` | Equation/derivation/consistency validation |
-| Experience curation | `@experience-curator` | Extract reusable patterns from history |
-
-See `AGENTS.md` for full agent list and descriptions.
 
 ---
 
@@ -382,13 +375,11 @@ dotnet add package <PackageName>
 
 **Use Skills and Agents for documentation tasks.**
 
-### Available Agents
+### Agent Selection
 
-| Agent | Purpose |
-|-------|------|
-| `@doc-writer` | Create documentation |
-| `@doc-reviewer` | Review documentation |
-| `@research-*` | Research tasks |
+> 🔴 **MANDATORY**: Always use `@doc-writer` for any documentation writing or editing.
+
+Select specialized documentation agents and skills according to the project policy.
 
 ### Documentation Types & Locations
 
@@ -429,126 +420,14 @@ Include in logs/results when applicable:
 
 ## 7. Project Documentation Structure
 
-**Template Files Initialization**: If `.template.md` files exist, refer to the **"Template Files Initialization"** section in `AGENTS.md` for customization workflow and cleanup procedures.
-
-**Publish-First Approach: Documents as deliverables only**
-
-The `documents/` directory is RESERVED for human-readable, curated reports.
-Raw logs, scratchpads, and intermediate data must LIVE IN MEMORY (MCP) or `logs/`.
-
-```text
-documents/
-├── PROJECT.md          # 🟢 Project overview & status (if applicable)
-├── AGENT_MANUAL.md     # 🟢 AI Agent operation manual (if applicable)
-├── final/              # 🟢 PUBLISHED: Completed, verified reports
-│   └── <TOPIC>_FINAL.md
-├── drafts/             # 🟡 DRAFTS: Curated but not yet final
-│   └── <TOPIC>_DRAFT.md
-├── reference/          # 🔵 REFERENCE: External papers/docs
-│   ├── papers/         # Academic papers summaries
-│   ├── technical/      # API docs, technical guides
-│   └── API_<library>_<topic>.md  # Library usage reference
-└── templates/          # ⚪ TEMPLATES: Standard forms
-```
-
-### 🚫 STRICTLY PROHIBITED in `documents/`
-- **Raw Logs / Scratchpads**: Use Memory MCP (`mcp_memory_store_memory`)
-- **Daily Updates / TODOs**: Use Memory MCP or `manage_todo_list`
-- **"Just in case" Notes**: If it's not worth curating, it's not a document.
-
-### The Pipeline: Capture → Curate → Publish
-
-1.  **Capture (Memory Layer)**
-    - Agent stores raw observations, errors, and intermediate thoughts in Memory MCP.
-    - *Action*: `mcp_memory_store_memory(content="Implementation note...", tags=["dev", "note"])`
-
-2.  **Curate (Draft Layer)**
-    - Agent synthesizes multiple memory entries into a structured draft.
-    - *Action*: Create `documents/drafts/FEATURE_ANALYSIS_DRAFT.md`
-
-3.  **Publish (Final Layer)**
-    - Human or Reviewer Agent approves the draft. Moves to `final/`.
-    - *Action*: `mv documents/drafts/x.md documents/final/x.md`
-
-### Directory Rules
-- **final/**: Truth. Reviewed. Permanent.
-- **drafts/**: Work in progress. Semantically structured.
-- **reference/**: External knowledge sources.
-- **templates/**: Standard forms for new documents.
-
-### Protected Files
-
-**⚠️ CRITICAL: Never modify README.md**
-
-The `README.md` file in the project root is a **universal development template** designed to work across all software projects. It is intentionally generic and framework-agnostic.
-
-**Rules**:
-- ❌ **DO NOT** edit README.md to add project-specific content
-- ✅ **DO** add all project-specific details to `documents/PROJECT.md`
-- ✅ **DO** refer users to `documents/PROJECT.md` for actual project information
-
-**Rationale**: README.md serves as a reusable template for future projects. Project-specific content belongs in `documents/PROJECT.md`.
-
-### Deprecated Paths → Memory MCP
-
-| ❌ Deprecated | ✅ Use Instead |
-|--------------|----------------|
-| `documents/notes/` | `mcp_memory_store_memory` with tags |
-| `documents/issues/` | `mcp_memory_store_memory` (tag: `issue`) |
-| `documents/development/` | `mcp_memory_store_memory` |
-| `documents/todo.md` | `manage_todo_list` tool |
-| `*.memory.md` files | `mcp_memory_*` tools |
-
-**Exception**: Major retrospectives/post-mortems go to `documents/final/`
+`documents/` is reserved for curated, human-readable deliverables.
+Operational documentation workflow, safety rules, protected files, and deprecated paths are defined in the operation manual.
 
 ---
 
 ## 8. Project Structure Guidelines
 
-Adapt this structure to your project type. Common patterns:
-
-### Software Development (General)
-
-```text
-.
-├── src/                # Source code
-│   ├── core/           # Core functionality
-│   ├── utils/          # Utilities
-│   └── archive/        # Archived code
-├── tests/              # Test files
-├── scripts/            # Build/deployment scripts
-├── docs/               # Generated documentation (API docs, etc.)
-├── documents/          # Curated documentation (see section 7)
-├── results/            # Execution results (if applicable)
-├── logs/               # Application logs
-└── temp/               # Temporary files (gitignored)
-```
-
-### RimWorld Mod Development
-
-```text
-.
-├── About/              # Mod metadata (About.xml)
-├── Defs/               # Game definitions (XML)
-├── Patches/            # Harmony patches (XML)
-├── Source/             # C# source code (if any)
-├── Textures/           # Graphics assets
-├── Sounds/             # Audio assets
-├── reference_codes/    # Reference mods for implementation study
-└── documents/          # Development documentation
-```
-
-### Research/Experiment Projects
-
-```text
-.
-├── src/                # Experiment code
-│   └── experiments/    # Experiment implementations
-├── configs/            # Configuration files
-├── results/            # Experiment outputs
-│   └── archive/        # Old results
-├── documents/          # Research documentation
-└── scripts/            # Automation scripts
-```
+Use this file for generic structure guidance only.
+Project-specific structure and process must be defined in the project document when it exists.
 
 ---

@@ -1,17 +1,5 @@
 {
     "servers": {
-        "arxiv-mcp-server": {
-            "type": "stdio",
-            "command": "uv",
-            "args": [
-                "tool",
-                "run",
-                "arxiv-mcp-server",
-                "--storage-path",
-                "${workspaceFolder}/documents/reference/papers"
-            ],
-            "cwd": "${workspaceFolder}"
-        },
         "context7": {
             "type": "stdio",
             "command": "npx",

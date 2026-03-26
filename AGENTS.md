@@ -38,27 +38,12 @@ This is a universal project template designed for various types of development p
 
 ## Setup Commands
 
-```bash
-# For Python projects (uv/pip/poetry)
-uv sync                    # Install dependencies
-uv add <package>          # Add new package
+Execution and dependency commands are managed in these files:
 
-# For Node.js projects (npm/yarn/pnpm)
-npm install               # Install dependencies
-npm install <package>     # Add new package
+- Global command conventions: `.github/copilot-instructions.md`
+- Project-specific commands: `documents/PROJECT.md`
 
-# For .NET projects
-dotnet restore            # Restore dependencies
-dotnet add package <pkg>  # Add new package
-
-# Run tests (adapt to your project)
-uv run pytest tests/      # Python
-npm test                  # Node.js
-dotnet test               # .NET
-
-# Project-specific commands (see documents/PROJECT.md)
-# ...
-```
+This file does not define runnable commands to avoid duplication.
 
 ## Template Files Initialization
 
@@ -96,14 +81,6 @@ If `.template.md` files exist in `documents/`, follow these steps:
 - [ ] Create `documents/QUICKSTART.md` from `QUICKSTART.template.md`
 - [ ] Create `documents/CHANGELOG.md` from `CHANGELOG.template.md`
 - [ ] Delete all `.template.md` files
-
-## Language Policy
-
-| Content | Language |
-| :--- | :--- |
-| Source code, configs | English |
-| Documentation, reports, comments | Korean (or project preference) |
-| Agent instructions, Skills | English |
 
 ## Development Workflow
 
@@ -224,30 +201,33 @@ description: 'Description of the skill and when it should be loaded.'
 
 ## Available Agents
 
-| Agent | Description |
-| :--- | :--- |
-| `@orchestrator` | Strategic Orchestration Planner. Interprets goals, designs workflow and subagent call sequence, and provides execution guidance for the main session. |
-| `@fixer` | Autonomous problem-solving & execution agent. Diagnoses issues, implements fixes, executes code/tests, and verifies solutions. |
-| `@doc-writer` | Documentation Writer. Creates well-structured documentation from requirements. |
-| `@doc-reviewer` | Documentation Reviewer. Reviews documentation for clarity and completeness. |
-| `@code-generator` | Code generation with best practices and type safety. |
-| `@code-quality-reviewer` | Code Quality Reviewer. Ensures code standards compliance. |
-| `@validator` | Verification and validation of code, configs, and outputs. |
-| `@architect` | Architecture Planner. Designs system architecture and technical solutions. |
-| `@research-gemini` | Implementation-focused research (Code, API, Hardware). |
-| `@research-gpt` | Theory-focused research (Concepts, Prior Work). |
-| `@research-claude` | System/Safety-focused research (Complexity, Constraints). |
-| `@planner-gemini` | Feasibility & Resource Planning (Quantitative). |
-| `@planner-gpt` | Architecture & Strategy Planning (Structural). |
-| `@planner-claude` | Risk & QA Planning (Safety). |
-| `@idea-generator-gemini` | Feasibility & Resource Optimization Ideas. |
-| `@idea-generator-gpt` | System Architecture & Business Strategy Ideas. |
-| `@idea-generator-claude` | UX, Safety & Divergent Thinking Ideas. |
-| `@citation-tracer` | Builds research lineage via DFS citation chaining. Identifies foundational papers. |
-| `@experience-curator` | Learns from project history. Extracts reusable patterns from logs, failures, and reviews. |
-| `@math-reviewer` | Mathematical verification of research paper implementations. |
-| `@qa-regression-sentinel` | Execution-based quality verification, reproduction scripts, and flaky test detection. |
-| `@rubric-verifier` | Multi-perspective quality verification with rubrics and independent critics. |
+Use this table to identify which agent to call for each task type. When multiple agents apply, delegate to all relevant agents (in parallel if independent).
+
+| Task Type | Agent | Description | Example Triggers |
+| :--- | :--- | :--- | :--- |
+| **Complex orchestration** | `@orchestrator` | Strategic planner. Returns execution blueprint; main session performs actual subagent calls. Planning-only — never writes code or edits files. | "plan this", "multi-phase task", "coordinate agents" |
+| **New code / feature implementation** | `@code-generator` | Code generation with best practices and type safety. | "implement X", "add feature Y", "write a function for Z" |
+| **Bug / error / failure diagnosis & fix** | `@fixer` | Autonomous problem-solving & execution agent. Diagnoses issues, implements fixes, executes code/tests, and verifies solutions. | "fix this", "error in", "not working", "debug" |
+| **Architecture / design planning** | `@architect` | Architecture Planner. Designs system architecture and technical solutions. | "design", "how should I structure", "best approach for" |
+| **Code review / quality gate** | `@code-quality-reviewer` | Code Quality Reviewer. Ensures code standards compliance. | "review my code", "is this good?", "check for issues" |
+| **Regression / test reliability** | `@qa-regression-sentinel` | Execution-based quality verification, reproduction scripts, and flaky test detection. | "run tests", "check for regressions", "flaky test" |
+| **Documentation writing** | `@doc-writer` | Documentation Writer. Creates well-structured documentation from requirements. | "write docs", "document this", "create README" |
+| **Documentation review** | `@doc-reviewer` | Documentation Reviewer. Reviews documentation for clarity and completeness. | "review this doc", "check documentation" |
+| **Theory / concept research** | `@research-gpt` | Theory-focused research (Concepts, Prior Work). | "explain theory behind", "what is X", "prior work on" |
+| **Implementation / API research** | `@research-gemini` | Implementation-focused research (Code, API, Hardware). | "how to implement X with library Y", "API usage for" |
+| **System / safety / risk research** | `@research-claude` | System/Safety-focused research (Complexity, Constraints). | "risks of", "constraints for", "safety analysis" |
+| **Quantitative / feasibility planning** | `@planner-gemini` | Feasibility & Resource Planning (Quantitative). | "is this feasible?", "estimate resources for" |
+| **Architecture / strategy planning** | `@planner-gpt` | Architecture & Strategy Planning (Structural). | "plan the architecture", "design strategy for" |
+| **Risk / QA planning** | `@planner-claude` | Risk & QA Planning (Safety). | "what could go wrong?", "risk assessment" |
+| **Math / equation verification** | `@math-reviewer` | Mathematical verification of research paper implementations. | "verify formula", "check math", "is this equation correct?" |
+| **Rubric-based quality verification** | `@rubric-verifier` | Multi-perspective quality verification with rubrics and independent critics. | "validate against criteria", "multi-perspective check" |
+| **Idea validation (methodology/theory)** | `@validator` | Verification and validation of code, configs, and outputs. | "validate this idea", "is this approach correct?" |
+| **Creative / UX / divergent ideas** | `@idea-generator-claude` | UX, Safety & Divergent Thinking Ideas. | "brainstorm ideas for", "alternative approaches" |
+| **Feasibility-focused ideas** | `@idea-generator-gemini` | Feasibility & Resource Optimization Ideas. | "what's a cost-effective way to", "optimize resource usage" |
+| **Architecture-focused ideas** | `@idea-generator-gpt` | System Architecture & Business Strategy Ideas. | "what's the best system design for", "scalable architecture" |
+| **Research lineage / citation** | `@citation-tracer` | Builds research lineage via DFS citation chaining. Identifies foundational papers. | "find foundational papers for", "citation chain for" |
+| **Pattern extraction from history** | `@experience-curator` | Learns from project history. Extracts reusable patterns from logs, failures, and reviews. | "what did we learn?", "extract patterns from" |
+| **Codebase exploration / Q&A** | `@Explore` | Fast read-only codebase exploration and Q&A. | "where is X defined?", "how does Y work?" |
 
 ## Available Skills
 

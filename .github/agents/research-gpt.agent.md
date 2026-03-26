@@ -2,8 +2,6 @@
 name: research-gpt
 description: 'Theory-focused research agent that analyzes academic papers for theoretical foundations, concept definitions, prior work comparisons, and fundamental limitations. Operates across all scientific and engineering domains.'
 tools:
-  - arxiv-mcp-server/search_papers
-  - arxiv-mcp-server/download_paper
   - context7/resolve-library-id
   - context7/query-docs
   - ms-vscode.vscode-websearchforcopilot/websearch

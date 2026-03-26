@@ -2,9 +2,6 @@
 name: research-claude
 description: 'System complexity, safety, and resource analysis specialist. Performs deep technical research on system constraints, failure modes, and engineering trade-offs across any domain.'
 tools:
-  - arxiv-mcp-server/search_papers
-  - arxiv-mcp-server/read_paper
-  - arxiv-mcp-server/download_paper
   - context7/resolve-library-id
   - context7/query-docs
   - memory/memory_store

@@ -40,6 +40,42 @@
 - `run_in_terminal`: 명령 실행
 - `runSubagent`: 전문 에이전트 호출
 
+### 1.4 복잡한 터미널 명령 실행 규칙 (필수)
+
+터미널 명령이 필요하더라도, 복잡한 로직은 쉘 체인 대신 **인라인 Python 스크립트**로 실행합니다.
+
+복잡한 명령 기준:
+
+- `&&`, `||`, `|`, `;` 조합이 3개 이상
+- `awk/sed/xargs` 기반의 다단 변환
+- 쉘 루프/조건문 필요
+- 인자 이스케이프 오류 위험이 큰 동적 명령
+
+권장 패턴:
+
+```bash
+python3 - <<'PY'
+import subprocess
+
+commands = [
+   ["git", "status", "--short"],
+   ["git", "diff", "--name-only"],
+]
+
+for cmd in commands:
+   print("$", " ".join(cmd))
+   completed = subprocess.run(cmd, check=True, text=True, capture_output=True)
+   if completed.stdout:
+      print(completed.stdout.strip())
+PY
+```
+
+원칙:
+
+- `subprocess.run([...])` 배열 인자를 기본 사용 (`shell=True` 지양)
+- 결과는 체크포인트 형태로 간단히 출력
+- 2회 이상 재사용되는 로직은 `scripts/`로 승격
+
 ---
 
 ## 2. 작업 절차 (General Workflow)
@@ -350,44 +386,16 @@ mcp_memory_store_memory(
 
 ## 7. 에이전트 호출 규칙
 
-### 7.1 사용 가능한 에이전트
+이 문서에서는 에이전트 호출의 운영 원칙만 다룹니다.
 
-전체 목록은 `AGENTS.md` 참조
+- 에이전트/스킬의 전체 카탈로그와 역할 정의: `AGENTS.md`
+- 호출 의무, 선택 규칙, 체이닝 프로토콜, 보고 요구사항: `.github/copilot-instructions.md`의 Agent Interaction Protocol
 
-**일반적으로 사용되는 에이전트**:
+운영 절차:
 
-- `@doc-writer`: 문서 작성
-- `@doc-reviewer`: 문서 검토
-- `@code-quality-reviewer`: 코드 품질 검사
-- `@research-*`: 연구/조사 (다중 관점)
-- `@validator`: 검증
-- `@architect`: 아키텍처 설계
-
-### 7.2 호출 예시
-
-```python
-# 단일 에이전트
-runSubagent(
-    description="Documentation review",
-    prompt="Review the draft in documents/drafts/FEATURE_ANALYSIS.md"
-)
-
-# 다중 관점 연구 (병렬)
-# 각각 독립적으로 호출
-runSubagent(description="Research-GPT", prompt="...")
-runSubagent(description="Research-Gemini", prompt="...")
-runSubagent(description="Research-Claude", prompt="...")
-```
-
-### 7.3 에이전트 선택 기준
-
-| 작업 유형 | 추천 에이전트 | 이유 |
-| ----------- | -------------- | ------ |
-| 복잡한 문제 해결 | `@fixer` | 자율 진단 및 실행 |
-| 문서화 | `@doc-writer` | 표준 형식 준수 |
-| 연구 | `@research-*` | 다중 관점 |
-| 계획 | `@planner-*` | 리소스 최적화 |
-| 검증 | `@validator` | 정확성 확인 |
+1. 작업 목적과 종료 조건을 먼저 정의
+2. 필요한 에이전트를 선택해 호출
+3. 실행 결과를 검증하고 체크리스트에 따라 보고
 
 ---
 

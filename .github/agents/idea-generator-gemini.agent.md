@@ -9,7 +9,6 @@ tools:
   - search
   - web
   - 'context7/*'
-  - 'arxiv-mcp-server/*'
   - 'memory/*'
   - 'sequentialthinking/*'
   - ms-vscode.vscode-websearchforcopilot/websearch
