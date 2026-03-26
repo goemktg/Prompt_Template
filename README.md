@@ -36,6 +36,8 @@ cd <project-directory>
 ## Project Structure
 
 > **📌 For detailed project structure**: See **[documents/PROJECT.md](documents/PROJECT.md)** for the actual directory layout and organization specific to this project.
+>
+> **📌 For extending this template**: See **[CONTRIBUTING.md](CONTRIBUTING.md)** to understand which file to edit when adding policies, procedures, or definitions.
 
 This template provides a standardized structure that adapts to any project type:
 

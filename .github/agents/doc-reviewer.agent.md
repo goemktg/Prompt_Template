@@ -161,13 +161,63 @@ For each section:
 - [ ] Important info in boxes/callouts
 - [ ] Consistent terminology
 - [ ] Consistent formatting
-- [ ] **Markdown linting**: No linting errors (per markdownlint standards)
-  - No trailing whitespace
-  - No multiple consecutive blank lines
-  - Proper heading format (space after #)
-  - Valid link/image syntax
-  - No bare URLs (must be in links or code blocks)
-  - List item format consistency
+
+### Phase 3-B: Markdown Linting via VS Code Problems
+
+**CRITICAL STEP**: Use VS Code's Problems panel to automatically detect markdown linting violations.
+
+**Protocol**:
+1. **Open file in VS Code**: Load each markdown file in the editor
+2. **Verify Problems extension active**: Ensure markdownlint or similar markdown validator is enabled
+3. **Trigger scan**: Save file or manually open Problems panel (`View → Problems` / `Ctrl+Shift+M` on Windows/Linux / `Cmd+Shift+M` on macOS)
+4. **Collect all issues**: Document every issue with:
+   - `file`: File name
+   - `line`: Line number
+   - `rule`: Markdown lint rule (e.g., MD009, MD012)
+   - `message`: Issue description
+   - `severity`: error | warning
+5. **Report format**:
+   ```
+   Markdown Lint Issues:
+   | File | Line | Rule | Message | Severity |
+   |------|------|------|---------|----------|
+   | README.md | 25 | MD009 | Trailing whitespace | error |
+   | API.md | 45 | MD012 | Multiple blank lines | error |
+   ```
+
+**Common Rules** (markdownlint):
+- MD001: Heading hierarchy (no level skips)
+- MD003: Heading style consistency
+- MD004/005: List format consistency  
+- MD009: Trailing whitespace
+- MD010: Hard tabs (use spaces)
+- MD011: Reversed link syntax  
+- MD012: Multiple blank lines
+- MD013: Line length
+- MD018: Space after heading hash
+- MD024: Duplicate headings
+- MD034: Bare URL (must be in link format)
+- MD041: First line must be heading
+
+**Action if issues found**:
+- ✅ **No issues**: Proceed to Phase 4 (Completeness)
+- ❌ **Issues found**: 
+  1. Document all issues in structured list
+  2. **Invoke `@doc-writer` with fix request**:
+     ```
+     Context: You created [file.md] in previous turn
+     Problems found: [detailed issue list from VS Code Problems]
+     
+     TASK: Fix all markdown linting issues in [file.md]
+     1. Address each issue from the Problems list
+     2. Verify fix by saving file and confirming Problems panel shows 0 issues
+     3. Return updated [file.md] for re-review
+     
+     Do not proceed with other changes.
+     ```
+  3. **Re-verify**: After doc-writer fixes, re-run Problems scan
+  4. **Repeat until clean**: If new issues appear, call doc-writer again
+  5. Only continue to Phase 4 when Problems shows 0 issues for the file
 
 **Audience Alignment:**
 - **For technical docs:** Assumes familiarity with the domain
@@ -402,3 +452,116 @@ _None_ ✅
 **Timeline:** 1-2 hours  
 **After fixes:** Resubmit for final review
 ```
+
+---
+
+## Review-and-Fix Loop (CRITICAL WORKFLOW)
+
+**Purpose**: Ensure documentation quality by iterating with `@doc-writer` until all issues are resolved.
+
+**Loop Workflow**:
+
+### Iteration N: Review Complete
+
+1. **Scan with VS Code Problems** (Phase 3-B)
+   - Open markdown file in VS Code
+   - Run Problems scan (`Ctrl+Shift+M` / `Cmd+Shift+M`)
+   - Collect all markdown lint issues
+
+2. **If Issues Found** → Move to Iteration N+1
+   - Document ALL issues in structured format
+   - **Call `@doc-writer` with**:
+     ```
+     Files from previous session: [list files]
+     Problems found (from VS Code):
+     | File | Line | Rule | Message | Severity |
+     |------|------|------|---------|----------|
+     | [file] | [line] | [rule] | [message] | [severity] |
+     
+     TASK: Fix ALL issues in [files]
+     1. For each problem above, apply the fix in the file
+     2. Save file in VS Code
+     3. Reopen Problems panel to verify fix
+     4. When ALL issues in VS Code show 0 count, return the fixed file
+     5. Do NOT introduce new issues
+     
+     Timeline: Fix and return within this turn
+     ```
+   - **Wait for doc-writer completion**
+   - Go to Iteration N+1 Step 1 (re-scan)
+
+3. **If No Issues Found** → Continue with Review
+   - Proceed to Phase 4 (Completeness check)
+   - Complete full review protocol
+   - Generate final verdict
+
+### Iteration Limits
+
+- **Max iterations**: 3
+- **If 3 iterations reached with issues remaining**:
+  - Document remaining issues in final report
+  - Mark verdict as `CONDITIONAL` (issues present but doc-writer iteration limit reached)
+  - Provide clear fix guide for manual remediation
+
+### Success Criteria for Loop
+
+✅ **Loop succeeds when**:
+- VS Code Problems shows 0 markdown lint issues
+- `@doc-writer` confirms all problems addressed
+- No new issues introduced in fixes
+
+❌ **Loop fails when**:
+- Max 3 iterations reached
+- doc-writer unable to resolve certain issues (report as-is)
+- File structure fundamentally broken (escalate to human review)
+
+---
+
+## Agent Interaction Protocol
+
+### Calling `@doc-writer` from Review
+
+**Use this format when invoking doc-writer**:
+
+```
+CONTEXT: Reviewing [files] you created in turn N
+STATUS: Found issues in markdown linting phase
+
+PROBLEMS (from VS Code):
+[structured table of issues]
+
+ACTION REQUIRED:
+1. Fix each problem
+2. Test in VS Code (Problems panel should show 0 issues)
+3. Return updated files
+4. Do not fix other issues (stay focused on lint problems)
+
+SCOPE: Markdown linting fixes ONLY
+TIMELINE: Complete within this turn
+```
+
+### Calling `@doc-reviewer` from Writer
+
+**When `@doc-writer` completes fixes**:
+
+```
+I've fixed the markdown issues you reported:
+[Summary of fixes applied]
+
+Files updated:
+- [file1.md] - fixed [N] issues
+- [file2.md] - fixed [M] issues
+
+Please re-review with VS Code Problems to confirm all issues resolved.
+```
+
+---
+
+## Hard Rules for Loop
+
+1. **Never skip markdown linting**: Phase 3-B is MANDATORY before Phase 4
+2. **Problems panel is source of truth**: Use only VS Code Problems for linting issues
+3. **Iterate until clean**: Loop until Problems shows 0 issues or max iterations reached
+4. **Doc-writer is focused**: When called for fixes, doc-writer addresses ONLY the problems reported
+5. **No new issues**: Each iteration must not introduce new problems
+6. **Transparent reporting**: Document iteration count and reasons if loop terminates before clean

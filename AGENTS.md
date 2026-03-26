@@ -1,5 +1,23 @@
 # AGENTS.md
 
+## Scope & References
+
+**Scope**:
+
+- Catalog of available Agents and Skills
+- Conventions for Agent definitions and customization files
+- Development workflow for creating new Agents/Skills
+
+**Out of Scope**:
+
+- Global normative policies (See `.github/copilot-instructions.md`)
+- Runtime operational procedures and execution checklists (See `documents/AGENT_MANUAL.md`)
+
+**References**:
+
+- **Manual**: `documents/AGENT_MANUAL.md` (Workflows)
+- **Policy**: `.github/copilot-instructions.md` (Rules)
+
 ## Project Overview
 
 This is a universal project template designed for various types of development projects. It provides:
@@ -35,52 +53,6 @@ This is a universal project template designed for various types of development p
 ├── logs/                    # Application logs
 └── temp/                    # Temporary files (gitignored)
 ```
-
-## Setup Commands
-
-Execution and dependency commands are managed in these files:
-
-- Global command conventions: `.github/copilot-instructions.md`
-- Project-specific commands: `documents/PROJECT.md`
-
-This file does not define runnable commands to avoid duplication.
-
-## Template Files Initialization
-
-If `.template.md` files exist in `documents/`, follow these steps:
-
-### Customization Workflow
-
-1. **Review `.template.md` files** in `documents/`:
-   - `PROJECT.template.md` - Project overview and status
-   - `CHANGELOG.template.md` - Version history
-   - `QUICKSTART.template.md` - Quick start guide
-
-2. **Gather project information** (if needed):
-   - Prompt user for project-specific details:
-     - Project name and description
-     - Technology stack and key dependencies
-     - Team members and roles (if applicable)
-     - Project objectives and scope
-     - Any other relevant project context
-   - Document this information clearly for use in the next step
-
-3. **Create project-specific files**:
-   - Using gathered information, create corresponding `.md` file (without `.template` suffix)
-   - Fill in all sections with appropriate project-specific content
-   - Tailor documentation to your project's needs and conventions
-
-4. **Clean up template files**:
-   - Delete all `.template.md` files after creating their corresponding `.md` files
-
-### Checklist
-
-- [ ] Review all `.template.md` files in `documents/`
-- [ ] Gather project-specific information from user input
-- [ ] Create `documents/PROJECT.md` from `PROJECT.template.md`
-- [ ] Create `documents/QUICKSTART.md` from `QUICKSTART.template.md`
-- [ ] Create `documents/CHANGELOG.md` from `CHANGELOG.template.md`
-- [ ] Delete all `.template.md` files
 
 ## Development Workflow
 
@@ -241,56 +213,7 @@ Use this table to identify which agent to call for each task type. When multiple
 | `data-analysis` | Result visualization and statistical comparison |
 | `skill-extension` | Create and extend agent skills |
 | `external-skill-generation` | Generate skills from external documentation |
-
-## Pull Request Guidelines
-
-### Code Review Checklist
-
-For agent files (`*.agent.md`):
-
-- [ ] Has YAML frontmatter
-- [ ] Has `name` field (lowercase with hyphens)
-- [ ] Has non-empty `description` field in single quotes
-- [ ] File name follows pattern `<name>.agent.md`
-
-For skills (`skills/*/SKILL.md`):
-
-- [ ] Folder contains a SKILL.md file
-- [ ] SKILL.md has YAML frontmatter
-- [ ] Has `name` field matching folder name
-- [ ] Has non-empty `description` field (10-1024 characters)
-- [ ] Any bundled assets are referenced in SKILL.md
-
-For general code:
-
-- [ ] Type hints on all functions (if applicable)
-- [ ] Documentation/comments in project language (Korean/English)
-- [ ] Error handling implemented
-- [ ] Tests added for new features
-- [ ] No hardcoded paths or credentials
-
-### Project-Specific Checklists
-
-**RimWorld Mod Development:**
-
-- [ ] XML patches have `success="Always"` attribute
-- [ ] XPath expressions are accurate
-- [ ] Mod dependencies declared in About.xml
-- [ ] Load order specified in `loadAfter`
-
-**Research/ML Projects:**
-
-- [ ] Random seeds are fixed
-- [ ] All hyperparameters in config files
-- [ ] No data leakage between train/test splits
-- [ ] Model in `.eval()` mode during validation
-
-**Web Development:**
-
-- [ ] API endpoints documented
-- [ ] Input validation implemented
-- [ ] Security headers configured
-- [ ] Rate limiting considered
+| `commit-skill` | Commit workflow skill with diff-based message generation and explicit user confirmation gate before `git commit` |
 
 ## Adding Custom Agents
 

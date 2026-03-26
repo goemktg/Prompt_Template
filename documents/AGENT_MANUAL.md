@@ -1,19 +1,52 @@
 # AI Agent 운영 매뉴얼
 
-이 문서는 AI 에이전트(VS Code Copilot 등)가 이 프로젝트에서 **자율적으로 작업**할 때
-따라야 할 절차와 규칙을 정의합니다.
+## 범위 및 참조 (Scope & References)
 
-> **중요**: 이 매뉴얼은 `.github/copilot-instructions.md`와 함께 사용됩니다.
->
-> - **코딩 가이드라인**: `.github/copilot-instructions.md`
-> - **프로젝트 운영 절차**: 이 문서 (AGENT_MANUAL.md)
-> - **프로젝트별 세부사항**: `PROJECT.md`
+**이 문서의 범위**:
+
+- AI 에이전트의 런타임 작업 절차 (SOP)
+- 도구 사용 순서 및 규칙
+- 오류 처리 및 보고 체크리스트
+- 프로젝트 초기화 및 검증 절차
+
+**참조 문서**:
+
+- **정책 및 제약사항**: `../.github/copilot-instructions.md` (최우선 규칙)
+- **에이전트 카탈로그**: `../AGENTS.md` (사용 가능한 도구 목록)
+- **프로젝트 정의**: `PROJECT.md` (현재 프로젝트 문맥)
 
 ---
 
-## 1. 에이전트 도구 개요
+## 1. 초기 설정 및 템플릿 관리 (Initialization)
 
-### 1.1 도구 우선순위
+프로젝트 시작 시 또는 템플릿 파일이 발견될 경우 수행하는 절차입니다.
+
+### 1.1 템플릿 초기화 워크플로우
+
+`documents/` 폴더에 `.template.md` 파일이 존재할 경우:
+
+1. **템플릿 검토**:
+   - `PROJECT.template.md`: 프로젝트 개요
+   - `CHANGELOG.template.md`: 변경 이력
+   - `QUICKSTART.template.md`: 시작 가이드
+
+2. **정보 수집 (사용자 인터뷰)**:
+   - 프로젝트 이름, 설명, 기술 스택
+   - 팀 구성 및 역할
+   - 목표 및 범위
+
+3. **파일 생성**:
+   - 수집된 정보로 `.md` 파일 생성 (예: `PROJECT.md`)
+   - 템플릿의 섹션을 실제 내용으로 채움
+
+4. **정리**:
+   - 생성 완료 후 `.template.md` 파일 삭제
+
+---
+
+## 2. 에이전트 도구 개요
+
+### 2.1 도구 우선순위
 
 | 우선순위 | 방법 | 사용 시기 |
 | --------- | ------ | ---------- |
@@ -21,7 +54,7 @@
 | 2 | **Direct Actions** | 파일 생성/수정 등 기본 작업 |
 | 3 | **User Consultation** | 불명확한 요구사항 확인 |
 
-### 1.2 필수 MCP 도구
+### 2.2 필수 MCP 도구
 
 | 도구 | 용도 | 사용 예시 |
 | ------ | ------ | ---------- |
@@ -31,7 +64,7 @@
 | `mcp_context7_*` | 라이브러리 문서 조회 | 외부 API 사용법 확인 |
 | `mcp_sequentialthinking` | 복잡한 추론 | 다단계 문제 해결 |
 
-### 1.3 표준 VS Code 도구
+### 2.3 표준 VS Code 도구
 
 - `semantic_search`: 코드베이스 검색
 - `read_file`: 파일 읽기
@@ -40,7 +73,7 @@
 - `run_in_terminal`: 명령 실행
 - `runSubagent`: 전문 에이전트 호출
 
-### 1.4 복잡한 터미널 명령 실행 규칙 (필수)
+### 2.4 복잡한 터미널 명령 실행 규칙 (필수)
 
 터미널 명령이 필요하더라도, 복잡한 로직은 쉘 체인 대신 **인라인 Python 스크립트**로 실행합니다.
 
@@ -78,9 +111,9 @@ PY
 
 ---
 
-## 2. 작업 절차 (General Workflow)
+## 3. 작업 절차 (General Workflow)
 
-### 2.1 표준 개발 루틴
+### 3.1 표준 개발 루틴
 
 ```text
 1. 컨텍스트 수집
@@ -96,7 +129,7 @@ PY
 6. 메모리 저장
 ```
 
-### 2.2 단계별 상세 절차
+### 3.2 단계별 상세 절차
 
 #### Step 1: 컨텍스트 수집 (필수)
 
@@ -211,16 +244,16 @@ mcp_memory_store_memory(
 
 ---
 
-## 3. 문서화 파이프라인
+## 4. 문서화 파이프라인
 
-### 3.1 Capture → Curate → Publish
+### 4.1 Capture → Curate → Publish
 
 ```text
 Memory MCP          documents/drafts/      documents/final/
 (일시적 메모)   →   (구조화된 초안)    →    (검토된 최종본)
 ```
 
-### 3.2 Memory MCP 사용 규칙
+### 4.2 Memory MCP 사용 규칙
 
 **✅ Memory MCP에 저장해야 하는 것:**
 
@@ -236,7 +269,7 @@ Memory MCP          documents/drafts/      documents/final/
 - 템플릿 (→ `documents/templates/`)
 - 코드 (→ `src/`)
 
-### 3.3 태그 표준
+### 4.3 태그 표준
 
 | 태그 | 용도 | 예시 |
 | ------ | ------ | ------ |
@@ -249,11 +282,37 @@ Memory MCP          documents/drafts/      documents/final/
 
 **복수 태그 사용 권장**: `tags=["issue", "solution", "xml-patch"]`
 
+## 5. 품질 검증 (Quality Assurance)
+
+작업 결과물 또는 PR 생성 시 다음 항목을 검증합니다.
+
+### 5.1 에이전트 파일 (`*.agent.md`) 검증
+
+- [ ] YAML Frontmatter 존재 확인
+- [ ] `name` 필드 형식 (소문자, 하이픈)
+- [ ] `description` 필드 (작은따옴표 포함, 비어있지 않음)
+- [ ] 파일명 규칙 준수 (`<name>.agent.md`)
+
+### 5.2 스킬 (`SKILL.md`) 검증
+
+- [ ] 폴더 내 `SKILL.md` 존재
+- [ ] YAML Frontmatter 및 `name` 일치 확인
+- [ ] `description` 필드 적절성 (10-1024자)
+- [ ] 번들 자산(스크립트 등)의 참조 정확성
+
+### 5.3 일반 코드/문서 검증
+
+- [ ] 모든 함수에 Type Hint 적용
+- [ ] 주석/문서는 프로젝트 언어(한국어/영어) 준수
+- [ ] 예외 처리 구현 여부
+- [ ] 하드코딩된 경로/자격증명 없음
+- [ ] 신규 기능에 대한 테스트 작성
+
 ---
 
-## 4. 안전 규칙 (Safety Rules)
+## 6. 안전 규칙 (Safety Rules)
 
-### 4.1 보호된 파일
+### 6.1 보호된 파일
 
 다음 파일은 **절대 삭제하거나 덮어쓰면 안 됩니다**:
 
@@ -263,7 +322,7 @@ Memory MCP          documents/drafts/      documents/final/
 - `AGENTS.md` - 에이전트 목록
 - 기타 프로젝트별 중요 파일 (`PROJECT.md` 참조)
 
-### 4.2 금지 행동
+### 6.2 금지 행동
 
 1. ❌ `documents/`에 임시 메모 파일 생성 → ✅ Memory MCP 사용
 2. ❌ `*.memory.md` 파일 생성 → ✅ Memory MCP 사용
@@ -271,7 +330,7 @@ Memory MCP          documents/drafts/      documents/final/
 4. ❌ 에러 발생 시 즉시 재시도 → ✅ 원인 분석 후 Memory MCP 기록
 5. ❌ 사용자 확인 없이 중요 파일 삭제 → ✅ `archive/` 이동
 
-### 4.3 허용 행동
+### 6.3 허용 행동
 
 1. ✅ Memory MCP에 관찰 내용 저장
 2. ✅ `documents/drafts/`에 초안 작성
@@ -281,9 +340,9 @@ Memory MCP          documents/drafts/      documents/final/
 
 ---
 
-## 5. 파일 규칙 (File Conventions)
+## 7. 파일 규칙 (File Conventions)
 
-### 5.1 디렉토리 구조
+### 7.1 디렉토리 구조
 
 ```text
 documents/
@@ -302,13 +361,13 @@ documents/
 
 **프로젝트별 구조는 `PROJECT.md` 참조**
 
-### 5.2 파일 명명 규칙
+### 7.2 파일 명명 규칙
 
 - **날짜 포함**: `YYYY-MM-DD_<description>.<ext>`
 - **명확한 이름**: 내용을 추론 가능하게
 - **소문자 + 하이픈**: `my-feature-analysis.md`
 
-### 5.3 레거시 코드 관리
+### 7.3 레거시 코드 관리
 
 ```text
 src/
@@ -321,9 +380,9 @@ src/
 
 ---
 
-## 6. 에러 처리 절차
+## 8. 에러 처리 절차
 
-### 6.1 에러 발생 시 프로세스
+### 8.1 에러 발생 시 프로세스
 
 ```text
 1. 에러 발생
@@ -341,7 +400,7 @@ src/
 7. 검증
 ```
 
-### 6.2 에러 기록 템플릿
+### 8.2 에러 기록 템플릿
 
 ```python
 mcp_memory_store_memory(
@@ -374,7 +433,7 @@ mcp_memory_store_memory(
 )
 ```
 
-### 6.3 일반적인 에러 대응
+### 8.3 일반적인 에러 대응
 
 프로젝트별 에러 유형은 `PROJECT.md` 참조
 
@@ -387,7 +446,7 @@ mcp_memory_store_memory(
 
 ---
 
-## 7. 에이전트 호출 규칙
+## 9. 에이전트 호출 규칙
 
 이 문서에서는 에이전트 호출의 운영 원칙만 다룹니다.
 
@@ -405,9 +464,9 @@ mcp_memory_store_memory(
 
 ---
 
-## 8. 체크리스트
+## 10. 체크리스트
 
-### 8.1 작업 시작 전
+### 10.1 작업 시작 전
 
 - [ ] **0-GATE 실행** (`.github/copilot-instructions.md § 0-GATE`) — 위임 결정 먼저
 - [ ] `documents/PROJECT.md` 확인
@@ -416,14 +475,14 @@ mcp_memory_store_memory(
 - [ ] 템플릿 존재 여부 확인 (`documents/templates/`)
 - [ ] 실질적 작업이면 `manage_todo_list` 생성
 
-### 8.2 작업 중
+### 10.2 작업 중
 
 - [ ] 점진적 변경 (작은 단위)
 - [ ] 중요한 관찰은 즉시 Memory MCP 기록
 - [ ] 에러 발생 시 즉시 기록 (tag: issue)
 - [ ] 불명확한 사항은 사용자에게 확인
 
-### 8.3 작업 완료 후
+### 10.3 작업 완료 후
 
 - [ ] 코드/파일 검증 완료
 - [ ] Memory MCP에 작업 요약 저장
@@ -431,7 +490,7 @@ mcp_memory_store_memory(
 - [ ] Todo 리스트 업데이트 (사용 중인 경우)
 - [ ] 사용자에게 간단한 요약 보고
 
-### 8.4 주기적 점검
+### 10.4 주기적 점검
 
 - [ ] Memory MCP 품질 확인 (`mcp_memory_quality`)
 - [ ] 오래된 메모리 정리 (선택)
@@ -440,7 +499,7 @@ mcp_memory_store_memory(
 
 ---
 
-## 9. 보고 형식
+## 11. 보고 형식
 
 작업 완료 시 다음 형식으로 요약:
 
@@ -465,7 +524,7 @@ mcp_memory_store_memory(
 
 ---
 
-## 10. 참고 문서
+## 12. 참고 문서
 
 ### 프로젝트 문서
 

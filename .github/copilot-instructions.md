@@ -1,32 +1,26 @@
 # GitHub Copilot Agent Instructions
 
-## Four Core Files (Single Source of Truth)
+## Scope & References
 
-These are the four core files for this template:
-- `.github/copilot-instructions.md`: Global coding/quality policy and agent behavior constraints
-- `documents/AGENT_MANUAL.md`: Operational procedures, runtime process, safety workflow, and reporting checklist
-- `AGENTS.md`: Agent/skill catalogs and customization file conventions
-- `documents/PROJECT.md`: Project-specific scope, decisions, commands, and overrides
+**Scope**:
+- Normative global policies and hard constraints
+- Critical safety and security rules
+- High-level decision-making frameworks (Reasoning, Delegation)
+- Coding standards and language policy
 
-## PROJECT.md Precedence Rule
+**Out of Scope**:
+- Runtime operational steps and tool usage (See `documents/AGENT_MANUAL.md`)
+- Detailed checklists/SOPs (See `documents/AGENT_MANUAL.md`)
+- Agent/Skill definitions (See `AGENTS.md`)
 
-If `documents/PROJECT.md` exists, use it as the primary source when understanding the current project.
-Project-specific guidance in `documents/PROJECT.md` overrides generic guidance in this file.
-
-## Required Reference Files
-
-When information from either file below is needed, you **MUST read the file first** before taking action.
-
-### `AGENTS.md`
-
-Contains:
-- Project overview and repository structure
-- Template files initialization workflow and checklist
-- Development workflow for agents, prompts, instructions, and skills
-- Available agents and available skills catalogs
-- Pull request review checklist and project adaptation guides
+**References**:
+- **Operational Manual**: `documents/AGENT_MANUAL.md` (Read for procedures)
+- **Agent Catalog**: `AGENTS.md` (Read for available tools)
+- **Contribution Guide**: `CONTRIBUTING.md` (Read if present)
 
 Rule:
+- If `CONTRIBUTING.md` exists, **MUST read it first** before creating PRs, issues, or proposing architectural changes. Its rules govern this specific repository and take precedence over generic template instructions.
+- If `CONTRIBUTING.md` is absent, follow this file plus `AGENTS.md` and `documents/AGENT_MANUAL.md` as the default governance set.
 - If the task requires agent catalogs, skill catalogs, customization file conventions, or template initialization workflow, **MUST read `AGENTS.md` first**.
 
 ### `documents/AGENT_MANUAL.md`
@@ -47,11 +41,10 @@ Rule:
 
 🔴 **MANDATORY PRE-FLIGHT CHECK (SESSION-ONCE)** - Execute immediately upon receiving the first user prompt of a new session, BEFORE taking any other action or processing the request:
 
-1. **Execute**: Run `scripts/upgrade_ai.py` in the workspace terminal using the last successful Python command.
-   - If `.copilot-memory/upgrade_command.txt` exists, use the stored command.
-   - Otherwise, try `python scripts/upgrade_ai.py` first.
-   - If `python` is unavailable, try `python3 scripts/upgrade_ai.py`.
-   - On success (exit code `0`), store the working command in `.copilot-memory/upgrade_command.txt` for use in future sessions.
+1. **Execute**: Run the OS-appropriate launcher in the workspace terminal.
+   - On macOS/Linux, run `sh scripts/upgrade.sh`.
+   - On Windows, run `cmd /c scripts\\upgrade.cmd`.
+   - Launchers must only resolve Python and delegate to `scripts/upgrade_ai.py`.
 2. **Check the exit code**:
    - **Exit code 0** (successful / already up-to-date): ✅ Proceed normally with the user's request
    - **Exit code 1** (upgrade failed or error): ❌ 
@@ -64,7 +57,7 @@ Rule:
 - This check happens **BEFORE** calling any tools, making any file changes, or generating substantial responses
 - Never skip, delay, or postpone this check on the first prompt of a new session
 - This takes absolute precedence over all other operations on first prompt only
-- Persist the successful Python command in `.copilot-memory/upgrade_command.txt` so future sessions use the correct interpreter (the check itself still runs each session)
+- Persist runtime state in `.copilot-memory/upgrade_state.json` (for example: last check time and interpreter metadata)
 - After a successful run (exit code 0), mark this session's check as completed
 - Within the same session, skip re-running if already completed; a new session always starts unchecked
 
@@ -224,7 +217,7 @@ If a trigger is met, do **NOT** proceed as a single-agent workflow unless blocke
 
 #### 2) Agent Selection Rules
 
-> See **[AGENTS.md § Available Agents](../../AGENTS.md#available-agents)** for the full task-type → agent mapping table with example triggers.
+> See **[AGENTS.md § Available Agents](../AGENTS.md)** for the full task-type → agent mapping table with example triggers.
 
 When multiple agents apply, delegate to all relevant agents (in parallel if independent).
 
@@ -409,12 +402,8 @@ User: "Which file should I put this feature in?"
 
 - **Criteria**: Code that is no longer used but contains valuable logic or experimental history.
 - **Action**: Move to `archive/` directories to minimize information loss.
-- **Structure**:
-  - `src/archive/<phase>/` - Archived source code
-  - `scripts/archive/<phase>/` - Archived scripts
-  - `results/archive/<phase>/` - Archived results (if applicable)
-  - `documents/archive/<phase>/` - Archived documentation
-- **Note**: Do NOT delete files. Move them to `archive/` instead.
+- **Policy**: Do NOT delete files. Move them to `archive/` instead.
+- **Operational Structure**: See `documents/AGENT_MANUAL.md` for directory conventions.
 
 ### Temporary Code
 
@@ -509,11 +498,11 @@ Select specialized documentation agents and skills according to the project poli
 
 | Type | Path | Language | Purpose |
 |------|------|----------|---------|
-| Final Reports | `documents/final/` | English | Completed, reviewed docs |
-| Drafts | `documents/drafts/` | English | Work in progress |
-| Technical Reference | `documents/reference/technical/` | English | API docs, guides |
-| Paper Summaries | `documents/reference/papers/` | English | Research summaries |
-| Templates | `documents/templates/` | English | Standard forms |
+| Final Reports | `documents/final/` | Korean | Completed, reviewed docs |
+| Drafts | `documents/drafts/` | Korean | Work in progress |
+| Technical Reference | `documents/reference/technical/` | Korean | API docs, guides |
+| Paper Summaries | `documents/reference/papers/` | Korean | Research summaries |
+| Templates | `documents/templates/` | Korean | Standard forms |
 
 ---
 
@@ -552,6 +541,6 @@ Operational documentation workflow, safety rules, protected files, and deprecate
 ## 8. Project Structure Guidelines
 
 Use this file for generic structure guidance only.
-Project-specific structure and process must be defined in the project document when it exists.
-
+For detailed repo structure, refer to `AGENTS.md`.
+Project-specific structure must be defined in `documents/PROJECT.md`
 ---

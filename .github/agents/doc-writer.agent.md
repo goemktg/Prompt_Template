@@ -226,6 +226,70 @@ Before generating any documentation:
 
 After creating or modifying documentation, you must invoke `@doc-reviewer` to validate clarity, accuracy, completeness, and consistency before delivery.
 
+**Protocol**:
+1. **Generate documentation** (following all sections below)
+2. **Save files** to their target locations
+3. **Invoke `@doc-reviewer`**:
+   ```
+   Files generated/edited:
+   - [file1.md] - [description]
+   - [file2.md] - [description]
+   
+   TASK: Review these files for clarity, accuracy, completeness, and consistency.
+   
+   Focus on:
+   - Phase 1-3: Structure, accuracy, clarity, markdown linting
+   - Phase 4-6: Completeness, consistency, links/metadata
+   
+   Request: Re-review with VS Code Problems until Issues = 0
+   Iterate until all markdown lint issues resolved.
+   ```
+4. **Wait for doc-reviewer feedback**
+5. **If feedback includes Problems issues**:
+   - You will receive list of markdown lint issues from VS Code Problems
+   - Fix each issue immediately (save to file)
+   - Confirm fixes in VS Code by checking Problems panel (should show 0 issues)
+   - Reply to doc-reviewer: "Fixed all issues, ready for re-review"
+6. **Repeat fix-and-verify until doc-reviewer confirms**:
+   - ✅ Verdict: `APPROVED` → Documentation is complete
+   - ⚠️ Verdict: `CONDITIONAL` → Known issues, but acceptable
+   - ❌ Verdict: `REJECTED` → Major issues, restart review
+
+### Handling Doc-Reviewer Feedback
+
+**When doc-reviewer reports markdown lint issues**:
+
+```
+You will receive:
+Problems found (from VS Code):
+| File | Line | Rule | Message | Severity |
+|------|------|------|---------|----------|
+| README.md | 25 | MD009 | Trailing whitespace | error |
+| API.md | 45 | MD012 | Multiple blank lines | error |
+
+ACTION:
+1. Open each file in VS Code
+2. Go to line [line] and fix [issue]
+3. Save file
+4. Check Problems panel (Ctrl+Shift+M) → should show 0 issues
+5. Confirm all fixes applied
+6. Reply: "Fixed. Ready for re-review."
+```
+
+**Common Markdown Lint Fixes**:
+- **MD009 (trailing whitespace)**: Remove spaces at end of lines
+- **MD012 (multiple blank lines)**: Replace consecutive blank lines with single blank line
+- **MD009 (hard tabs)**: Replace tabs with spaces
+- **MD018 (no space after #)**: Change `#Heading` → `# Heading`
+- **MD034 (bare URL)**: Change `https://example.com` → `[link](https://example.com)`
+- **MD041 (no h1)**: Ensure first line is `# Title`
+
+**Do NOT**:
+- ❌ Introduce new content/features while fixing lint issues
+- ❌ Ignore Problems panel feedback
+- ❌ Skip re-scanning after each fix
+- ❌ Mark as "fixed" without confirming in Problems panel
+
 ### Step 1: README.md (Project Overview)
 
 **Purpose**: First impression, quick orientation, link to deeper docs
@@ -907,6 +971,118 @@ runSubagent(
 - Use `@code-generator` for complex code examples
 - Use `@research-*` agents for validating technical claims
 - Use Sequential Thinking MCP for complex documentation architectures
+
+---
+
+## Feedback Loop Workflow from Doc-Reviewer
+
+**When `@doc-reviewer` calls you back with Problems issues**:
+
+### Loop Iteration Protocol
+
+**Input from doc-reviewer**:
+```
+Context: Reviewing [files] you created in turn N
+STATUS: Found issues in markdown linting phase
+
+PROBLEMS (from VS Code):
+| File | Line | Rule | Message | Severity |
+|------|------|------|---------|----------|
+| [file] | [line] | [rule] | [message] | [error/warning] |
+
+ACTION REQUIRED:
+1. Fix each problem
+2. Test in VS Code (Problems panel should show 0 issues)
+3. Return updated files
+4. Do not fix other issues (stay focused on lint problems)
+
+SCOPE: Markdown linting fixes ONLY
+TIMELINE: Complete within this turn
+```
+
+### Your Response Steps
+
+1. **Understand each problem**:
+   - Read the rule code (e.g., MD009, MD012)
+   - Understand what violation occurred
+   - Identify exact line and fix
+
+2. **Fix in VS Code**:
+   - Open the file in VS Code
+   - Go to exact line number
+   - Apply the fix
+   - Save file (`Ctrl+S` / `Cmd+S`)
+
+3. **Verify fix immediately**:
+   - Open Problems panel (`Ctrl+Shift+M` / `Cmd+Shift+M`)
+   - Check that the problem is no longer listed
+   - If multiple issues in one file, repeat step 2-3 for each
+
+4. **Complete checklist before responding**:
+   - [ ] Each problem from the list is fixed
+   - [ ] Problems panel shows file with 0 issues (or no entry for the file)
+   - [ ] No new issues introduced
+   - [ ] All files saved
+
+5. **Reply to doc-reviewer**:
+   ```
+   I've fixed all issues found in VS Code Problems:
+   
+   Fixed files:
+   - [file1.md]: Fixed [N] issues (MD009, MD012, etc.)
+   - [file2.md]: Fixed [M] issues (MD018, MD024, etc.)
+   
+   Verification:
+   - Opened each file in VS Code
+   - Fixed each issue on reported lines
+   - Problems panel shows 0 issues for these files
+   - No new issues introduced
+   
+   Ready for re-review.
+   ```
+
+### Markdown Lint Rules Quick Reference
+
+| Rule | Issue | Fix |
+|------|-------|-----|
+| MD001 | Heading level skip | Ensure h1 → h2 → h3, no jumps |
+| MD003 | Inconsistent heading style | Use `#`, `##`, `###` consistently |
+| MD004 | Inconsistent list style | Use same `-`, `*`, or `+` throughout |
+| MD009 | Trailing whitespace | Remove spaces at line end |
+| MD010 | Hard tabs | Replace tabs with spaces |
+| MD012 | Multiple blank lines | Keep max 1 blank line between blocks |
+| MD018 | No space after # | Change `#Heading` → `# Heading` |
+| MD024 | Duplicate heading | Ensure all headings are unique |
+| MD034 | Bare URL | Wrap in link: `[text](url)` |
+| MD041 | No h1 | Make first line `# Title` |
+
+### Loop Continuation Rules
+
+**Continue looping if**:
+- doc-reviewer finds more issues after your fixes
+- You receive another Problems list from the same or adjacent files
+- Verdict is `CONDITIONAL` (issues remain but acceptable)
+
+**Stop looping if**:
+- doc-reviewer confirms verdict `APPROVED` (0 issues, documentation complete)
+- 3 iterations reached (doc-reviewer will note in report)
+- Unable to fix certain issues (escalate to human review)
+
+### Success Indicators
+
+✅ **You've succeeded when doc-reviewer reports**:
+```
+Verdict: APPROVED
+Quality Score: 85+/100
+Issues: 0 (markdown linting: 0 | content: 0)
+```
+
+❌ **Issues remain if verdict is**:
+```
+Verdict: CONDITIONAL | REJECTED
+Issues: [N] remaining
+Next Steps: [human review / rework required]
+```
 
 ---
 

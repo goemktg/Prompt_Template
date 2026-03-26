@@ -19,6 +19,7 @@ Self-update flow:
 """
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -48,7 +49,8 @@ class TemplateUpgrader:
         self.staged_script   = self.temp_base / _STAGED_NAME
         self.helper_script   = self.temp_base / _HELPER_NAME
         self.version_file    = repo_root / "LAST_VERSION.json"
-        self.last_check_file = repo_root / ".copilot-memory" / "upgrade_last_check.txt"
+        self.state_file      = repo_root / ".copilot-memory" / "upgrade_state.json"
+        self.legacy_check_file = repo_root / ".copilot-memory" / "upgrade_last_check.txt"
         self.ignore_delay    = ignore_delay
 
     # ------------------------------------------------------------------
@@ -56,22 +58,63 @@ class TemplateUpgrader:
     # ------------------------------------------------------------------
 
     def _ensure_check_dir(self):
-        self.last_check_file.parent.mkdir(parents=True, exist_ok=True)
+        self.state_file.parent.mkdir(parents=True, exist_ok=True)
+
+    def _load_state(self) -> dict:
+        self._ensure_check_dir()
+        if not self.state_file.exists():
+            return {"schema_version": 1}
+        try:
+            with open(self.state_file, encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                if "schema_version" not in data:
+                    data["schema_version"] = 1
+                return data
+        except (OSError, json.JSONDecodeError):
+            pass
+        return {"schema_version": 1}
+
+    def _save_state(self, state: dict):
+        self._ensure_check_dir()
+        temp_file = self.state_file.with_suffix(".json.tmp")
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, sort_keys=True)
+        temp_file.replace(self.state_file)
 
     def _get_last_check_time(self) -> Optional[datetime]:
-        self._ensure_check_dir()
-        if not self.last_check_file.exists():
-            return None
+        state = self._load_state()
         try:
-            with open(self.last_check_file) as f:
-                return datetime.fromtimestamp(float(f.read().strip()))
-        except (ValueError, IOError):
-            return None
+            ts = state.get("last_check_ts")
+            if ts is not None:
+                return datetime.fromtimestamp(float(ts))
+        except (ValueError, TypeError, OSError):
+            pass
+
+        # Backward-compatibility path for existing check files.
+        if self.legacy_check_file.exists():
+            try:
+                with open(self.legacy_check_file, encoding="utf-8") as f:
+                    return datetime.fromtimestamp(float(f.read().strip()))
+            except (ValueError, OSError):
+                return None
+        return None
 
     def _save_check_time(self):
-        self._ensure_check_dir()
-        with open(self.last_check_file, "w") as f:
-            f.write(str(datetime.now().timestamp()))
+        state = self._load_state()
+        state["last_check_ts"] = datetime.now().timestamp()
+        state["os"] = sys.platform
+        interpreter = os.environ.get("UPGRADE_PYTHON_CMD")
+        if interpreter:
+            state["last_interpreter"] = interpreter
+        self._save_state(state)
+
+    def _save_last_exit_code(self, code: int):
+        state = self._load_state()
+        state["last_exit_code"] = code
+        if code == 0:
+            state["last_success_ts"] = datetime.now().timestamp()
+        self._save_state(state)
 
     def _should_check_for_updates(self) -> bool:
         if self.ignore_delay:
@@ -378,13 +421,16 @@ def main():
 
     if args.deleteHelper:
         upgrader.delete_helper()
+        upgrader._save_last_exit_code(0)
         sys.exit(0)
 
     try:
         success = upgrader.upgrade()
+        upgrader._save_last_exit_code(0 if success else 1)
         sys.exit(0 if success else 1)
     except Exception as e:
         print(f"ERROR: Unexpected error: {e}", file=sys.stderr)
+        upgrader._save_last_exit_code(1)
         sys.exit(1)
 
 
