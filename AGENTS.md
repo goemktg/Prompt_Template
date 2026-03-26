@@ -203,9 +203,11 @@ description: 'Description of the skill and when it should be loaded.'
 
 Use this table to identify which agent to call for each task type. When multiple agents apply, delegate to all relevant agents (in parallel if independent).
 
+> **Pre-selection**: Before consulting this table, run the Pre-Response Delegation Gate (§ 0-GATE in `.github/copilot-instructions.md`). If any gate condition is YES, you MUST call at least one agent from this table.
+
 | Task Type | Agent | Description | Example Triggers |
 | :--- | :--- | :--- | :--- |
-| **Complex orchestration** | `@orchestrator` | Strategic planner. Returns execution blueprint; main session performs actual subagent calls. Planning-only — never writes code or edits files. | "plan this", "multi-phase task", "coordinate agents" |
+| **Complex orchestration** | `@orchestrator` | Strategic planner. Returns execution blueprint; main session performs actual subagent calls. Planning-only — never writes code or edits files. **Call FIRST** when: task needs 3+ subagent steps, spans 3+ domains, has dependency ordering, or produces artifacts requiring downstream validation. | "plan this", "multi-phase task", "coordinate agents" |
 | **New code / feature implementation** | `@code-generator` | Code generation with best practices and type safety. | "implement X", "add feature Y", "write a function for Z" |
 | **Bug / error / failure diagnosis & fix** | `@fixer` | Autonomous problem-solving & execution agent. Diagnoses issues, implements fixes, executes code/tests, and verifies solutions. | "fix this", "error in", "not working", "debug" |
 | **Architecture / design planning** | `@architect` | Architecture Planner. Designs system architecture and technical solutions. | "design", "how should I structure", "best approach for" |

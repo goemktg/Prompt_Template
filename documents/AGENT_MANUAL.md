@@ -129,7 +129,10 @@ PY
 
 #### Step 2: 작업 계획
 
-복잡한 작업의 경우 `manage_todo_list` 사용:
+**비자명(non-trivial) 작업에는 반드시 `manage_todo_list`를 사용합니다.**
+순수 대화형 작업(1문장 이하 사실 답변)이 아닌 모든 실질적 작업에 적용합니다.
+
+단계 정의 전에 `.github/copilot-instructions.md § 0-GATE`를 실행하여 위임 에이전트를 먼저 결정합니다:
 
 ```python
 manage_todo_list(todoList=[
@@ -391,11 +394,14 @@ mcp_memory_store_memory(
 - 에이전트/스킬의 전체 카탈로그와 역할 정의: `AGENTS.md`
 - 호출 의무, 선택 규칙, 체이닝 프로토콜, 보고 요구사항: `.github/copilot-instructions.md`의 Agent Interaction Protocol
 
-운영 절차:
+**운영 절차**:
 
-1. 작업 목적과 종료 조건을 먼저 정의
-2. 필요한 에이전트를 선택해 호출
-3. 실행 결과를 검증하고 체크리스트에 따라 보고
+1. **0-GATE 실행** (`.github/copilot-instructions.md § 0-GATE` 참조)
+   - G1–G6 중 하나라도 YES → `runSubagent` 호출 의무
+   - 모두 NO → 직접 답변 허용 (≤3문장)
+2. 작업 목적과 종료 조건을 먼저 정의
+3. 필요한 에이전트를 선택해 호출
+4. 실행 결과를 검증하고 체크리스트에 따라 보고
 
 ---
 
@@ -403,11 +409,12 @@ mcp_memory_store_memory(
 
 ### 8.1 작업 시작 전
 
+- [ ] **0-GATE 실행** (`.github/copilot-instructions.md § 0-GATE`) — 위임 결정 먼저
 - [ ] `documents/PROJECT.md` 확인
 - [ ] Memory MCP에서 관련 작업 검색
 - [ ] 기존 코드/파일 패턴 확인
 - [ ] 템플릿 존재 여부 확인 (`documents/templates/`)
-- [ ] 복잡한 작업은 `manage_todo_list` 생성
+- [ ] 실질적 작업이면 `manage_todo_list` 생성
 
 ### 8.2 작업 중
 

@@ -47,7 +47,11 @@ Rule:
 
 🔴 **MANDATORY PRE-FLIGHT CHECK (SESSION-ONCE)** - Execute immediately upon receiving the first user prompt of a new session, BEFORE taking any other action or processing the request:
 
-1. **Execute**: `python scripts/upgrade_ai.py` in the workspace terminal
+1. **Execute**: Run `scripts/upgrade_ai.py` in the workspace terminal using the last successful Python command.
+   - If `.copilot-memory/upgrade_command.txt` exists, use the stored command.
+   - Otherwise, try `python scripts/upgrade_ai.py` first.
+   - If `python` is unavailable, try `python3 scripts/upgrade_ai.py`.
+   - On success (exit code `0`), store the working command in `.copilot-memory/upgrade_command.txt` for use in future sessions.
 2. **Check the exit code**:
    - **Exit code 0** (successful / already up-to-date): ✅ Proceed normally with the user's request
    - **Exit code 1** (upgrade failed or error): ❌ 
@@ -60,8 +64,9 @@ Rule:
 - This check happens **BEFORE** calling any tools, making any file changes, or generating substantial responses
 - Never skip, delay, or postpone this check on the first prompt of a new session
 - This takes absolute precedence over all other operations on first prompt only
-- Mark the check as completed for the current session after a successful run (exit code 0)
-- If the current session is already marked as completed, skip re-running this check and proceed with the user's request
+- Persist the successful Python command in `.copilot-memory/upgrade_command.txt` so future sessions use the correct interpreter (the check itself still runs each session)
+- After a successful run (exit code 0), mark this session's check as completed
+- Within the same session, skip re-running if already completed; a new session always starts unchecked
 
 ---
 
@@ -153,11 +158,41 @@ Before taking any action (either tool calls _or_ responses to the user), you mus
 
 #### 0) Default Delegation Principle
 **Subagent delegation is the DEFAULT mode for ALL substantive tasks, every turn.**
-Only handle a task without subagents if it is **purely conversational** (e.g., answering a factual question in one sentence) or if all subagent tooling is unavailable.
+Only handle a task without subagents if **ALL** of the following are true, or if all subagent tooling is unavailable.
+
+**"Purely Conversational" — exact definition (ALL four must be true):**
+1. The response requires no file reads, code analysis, or codebase exploration.
+2. The full answer fits in ≤3 sentences using only training knowledge — no tool verification needed.
+3. No action (file edit, command execution, artifact creation) is taken or implied.
+4. The question is purely definitional or factual (e.g., "what does X mean?") — NOT analytical, explanatory, comparative, or investigative.
+
+If **any** of the above is false → the task is substantive → **MUST delegate via `runSubagent`**.
 
 **Decision flow (apply in order):**
-1. Is the task purely conversational with no file/code changes? → Answer directly.
-2. Otherwise → Identify the appropriate subagent(s) and delegate. Do NOT do the work yourself.
+1. Run the Pre-Response Delegation Gate (§ 0-GATE) FIRST — before any other action or output.
+2. If gate result is "delegate" → Identify appropriate subagent(s) and call `runSubagent` immediately.
+3. If gate result is "direct" → Answer in ≤3 sentences without tool calls.
+
+#### 0-GATE) Mandatory Pre-Response Delegation Gate
+🔴 **Execute this gate BEFORE generating any response or taking any action.**
+
+Answer each question YES or NO. If **ANY** answer is YES → **MUST delegate via `runSubagent`** before proceeding:
+
+| # | Gate Question | YES → |
+|---|---|---|
+| G1 | Does this touch any file, code, or codebase? | Delegate |
+| G2 | Does this require more than 3 sentences to fully address? | Delegate |
+| G3 | Does this involve any action (edit, create, run, fix, explain-by-reading)? | Delegate |
+| G4 | Does this span more than 1 domain (code/arch/QA/docs/research/security)? | Delegate |
+| G5 | Would the answer benefit from tool-based verification (even if training data seems sufficient)? | Delegate |
+| G6 | Could an incorrect direct answer cause quality or correctness issues? | Delegate |
+
+**All NO** → direct answer (≤3 sentences, no tools).
+**Any YES** → stop output, identify agents, call `runSubagent`.
+
+❌ **FORBIDDEN**: Generating a direct answer first and then noting "I should have used a subagent."
+❌ **FORBIDDEN**: Starting to answer, then calling a subagent mid-response.
+✅ **REQUIRED**: The gate runs FIRST. The delegation decision is locked before any substantive output.
 
 #### 1) Mandatory Invocation Triggers
 You **MUST** invoke at least one specialized subagent via `runSubagent` when **ANY** of the following is true (this list is non-exhaustive — when in doubt, delegate):
@@ -165,16 +200,25 @@ You **MUST** invoke at least one specialized subagent via `runSubagent` when **A
 1. Any code is being written, read for understanding, or modified.
 2. Any file is being created, edited, reviewed, or restructured.
 3. Any bug, error, failure, or unexpected behavior is being investigated or fixed.
-4. Any architecture, design, or planning decision is being made.
+4. Any architecture, design, or planning decision is being made — including "where should X go?", "how should Y be structured?", "what's the best approach for Z?", or any question about component placement, responsibility boundaries, or structural trade-offs.
 5. Any documentation is being created, updated, or reviewed.
-6. Any research, analysis, or external verification is required.
-7. The task requires 2+ distinct steps, phases, or subtasks.
-8. The task spans 2+ domains (e.g., architecture + code + QA).
+6. Any analysis or verification is required — including explaining how existing code works, comparing alternatives, assessing trade-offs, or investigating root causes. Training knowledge alone is NOT sufficient; tool-based verification is required.
+7. The task requires 2+ logically distinct operations — meaning different tool categories, different agent specializations, or different phases of work (plan → implement → validate). File count is irrelevant.
+8. The task spans 2+ domains. Domains include: implementation, architecture, testing/QA, security, documentation, research, performance, and UX. When domain boundary is uncertain, assume multiple domains apply.
 9. The user asks for optimization, root-cause analysis, or production-quality validation.
 10. The expected work touches 2+ files or involves any refactoring.
-11. The task needs external verification (documentation, papers, or web references).
+11. The task would benefit from external sources (documentation, library APIs, papers, or web references) — even if the agent believes it already knows the answer from training data.
 
-> **Scale threshold**: For changes ≤5 lines in a single file with one clear goal, handle directly without subagent overhead.
+> **Scale threshold** — direct handling ONLY when **ALL** conditions are met:
+> - Diff is ≤5 lines total (additions + deletions combined)
+> - Exactly 1 file is modified
+> - Change is purely syntactic (whitespace, typo, rename) — **no logic changes**
+> - Zero security implications (no auth, crypto, input validation, or permissions code touched)
+> - No tests need to be written or updated as a result
+> - Impacted scope is ≤1 function or method
+> - The documentation MANDATORY rule (§5 Documentation Workflow) does **NOT** apply to this change
+>
+> If **ANY** condition above is not met → scale threshold does NOT apply → use the appropriate subagent.
 
 If a trigger is met, do **NOT** proceed as a single-agent workflow unless blocked by tooling or user constraints.
 
@@ -190,6 +234,14 @@ Special rule for `@orchestrator`:
 - The main session performs actual `runSubagent` calls.
 
 #### 2.1) Orchestrator-Chained Execution Protocol (Sequential)
+
+**"Multi-step substantive task" definition — ANY of the following qualifies:**
+- Task requires 3+ distinct agent invocations to complete correctly
+- Task spans 3+ domains
+- Task has explicit dependency ordering (step B cannot start before step A completes)
+- Task produces artifacts that require downstream validation (e.g., code → tests → review)
+- Task involves planning a sequence that the agent itself cannot fully determine without orchestration
+- When uncertain whether a task is multi-step, treat it as multi-step and call `@orchestrator`
 
 For multi-step substantive tasks, use this hand-off pattern:
 1. Call `@orchestrator` first to obtain a concrete execution plan.
@@ -225,7 +277,24 @@ For every substantive task, follow this order:
 6. **Report**: Summarize results and any residual risks.
 
 #### 5) Anti-Skipping Guard
-If no subagent is invoked for a task that is not purely conversational, the assistant **MUST** explicitly state why (tool limits, blocked context, or user constraints) and propose an alternative delegation plan. Silence on this is not acceptable.
+**This guard is a PRE-ACTION gate, not a post-hoc explanation.**
+
+Before generating any substantive response:
+1. Has the Pre-Response Delegation Gate (§ 0-GATE) been executed? If not → execute it NOW.
+2. Did the gate require delegation? If yes and `runSubagent` has not been called → call it NOW.
+
+If no subagent is invoked for a non-purely-conversational task:
+- **STOP** the response immediately.
+- State the bypass reason using EXACTLY one of the valid tags below.
+- Propose which agent should have been called.
+- Silence, implicit assumption, or proceeding without a tagged reason is a **protocol failure**.
+
+**Valid bypass reason tags (one must be stated explicitly):**
+- `[TOOL_UNAVAILABLE]` — `runSubagent` tool is disabled or all agents are blocked.
+- `[USER_OVERRIDE]` — User explicitly instructed a direct response (quote the exact instruction).
+- `[GATE_PASSED]` — Task passed all 6 gate conditions (state which G1–G6 answers were all NO).
+
+Any other reason is not valid. If none of these apply, delegation is mandatory.
 
 #### 6) Output Requirements
 When subagents are used, the final response **MUST** include:
@@ -235,6 +304,53 @@ When subagents are used, the final response **MUST** include:
 3. Key findings from each agent
 4. How results were integrated
 5. What was verified (tests/checks) and residual risks
+
+#### 7) Delegation Examples (Few-Shot Reference)
+Use these examples as behavioral anchors. The ✅ pattern must be followed; the ❌ pattern is a protocol violation.
+
+**Example A — Feature Implementation**
+```
+User: "Implement the login API endpoint."
+
+❌ WRONG: [Agent starts writing code immediately]
+
+✅ CORRECT:
+  [0-GATE] G1=YES(code is being written) → Delegate
+  [@orchestrator] called → plan: architect → code-generator → code-quality-reviewer
+  [@architect] API design
+  [@code-generator] implementation
+  [@code-quality-reviewer] validation
+```
+
+**Example B — Code Explanation**
+```
+User: "Explain how this function works."
+
+❌ WRONG: "This is purely conversational, so I'll explain directly" → answers without reading code
+
+✅ CORRECT:
+  [0-GATE] G1=YES(codebase exploration required), G3=YES(file reading) → Delegate
+  [@Explore] called → analyzes function behavior, then explains
+```
+
+**Example C — Genuine Direct Answer**
+```
+User: "What does the 'feat' commit type mean?"
+
+[0-GATE] G1=NO, G2=NO(1 sentence), G3=NO, G4=NO, G5=NO, G6=NO → ALL NO
+[GATE_PASSED] → direct answer: "It is a commit type indicating the addition of a new feature."
+```
+
+**Example D — Architecture Question**
+```
+User: "Which file should I put this feature in?"
+
+❌ WRONG: "This is just simple advice, so I'll answer directly."
+
+✅ CORRECT:
+  [0-GATE] G4=YES(architecture domain) → Delegate
+  [@architect] called → structural placement recommendation
+```
 
 ### Mandatory Research Phase
 >**Constraint**: Before complex implementation/optimization, perform research first.
@@ -247,14 +363,20 @@ When subagents are used, the final response **MUST** include:
 
 ## 1. Language Policy
 
-### Documentation (Korean)
+### Repository Language Standards
 
-Write in **Korean** for documents requiring frequent human review (e.g., reports, documentation, comments) to maximize readability for the team.
+- **Project Documents (`documents/`)**: Write in **Korean**. This applies to curated human-readable guides, reports, templates, and deliverables stored under `documents/`.
+- **System & Code**: Write in **English** for all other repository content. This includes source code, inline comments, agent definitions (`.agent.md`), prompts, instructions, and operational guidance outside `documents/`.
 
 ### Rationale
 
-- **English for code**: Token efficiency, universal tooling compatibility
-- **Korean for reports**: Better readability for human reviewers
+- **Korean for `documents/`**: Improves local maintainability for curated project documents intended primarily for human reading.
+- **English for operational assets**: Preserves token efficiency, tool compatibility, and consistency for executable instructions and code-facing assets.
+
+### Operational Constraints
+
+- Operational files and agents must **not** depend on Korean documents as required runtime context.
+- Critical system instructions must remain in English unless there is a verified reason to localize them.
 
 ### Mathematical Notation
 
@@ -272,12 +394,12 @@ Write in **Korean** for documents requiring frequent human review (e.g., reports
 2. **Avoid Hallucination**: Do not rely solely on training data for rapidly evolving libraries
 3. **Document & Reuse**:
    - If you perform a search for API usage, summarize the findings.
-   - Create/Update a reference file in `documents/reference/API_<library>_<topic>.md` (in Korean).
+   - Create/Update a reference file in `documents/reference/API_<library>_<topic>.md`.
    - Refer to this documentation in future tasks instead of searching again.
 
 ### General Standards
 
-- **Comments**: Write comments and DOCSTRINGs in Korean (or project language)
+- **Comments**: Write comments and docstrings in English
 - **Type hints**: STRONGLY recommended for all functions, arguments, and return values
 - **Error handling**: Handle exceptions explicitly
 - **Tests**: Write tests for core features
@@ -378,6 +500,8 @@ dotnet add package <PackageName>
 ### Agent Selection
 
 > 🔴 **MANDATORY**: Always use `@doc-writer` for any documentation writing or editing.
+> **Priority**: This rule has **HIGHER PRIORITY** than the scale threshold exception in § 0.2.
+> Even a 1-line change to a documentation file requires `@doc-writer`. The scale threshold does NOT apply to documentation.
 
 Select specialized documentation agents and skills according to the project policy.
 
@@ -385,11 +509,11 @@ Select specialized documentation agents and skills according to the project poli
 
 | Type | Path | Language | Purpose |
 |------|------|----------|---------|
-| Final Reports | `documents/final/` | Korean/English | Completed, reviewed docs |
-| Drafts | `documents/drafts/` | Korean/English | Work in progress |
-| Technical Reference | `documents/reference/technical/` | As needed | API docs, guides |
-| Paper Summaries | `documents/reference/papers/` | Korean/English | Research summaries |
-| Templates | `documents/templates/` | As needed | Standard forms |
+| Final Reports | `documents/final/` | English | Completed, reviewed docs |
+| Drafts | `documents/drafts/` | English | Work in progress |
+| Technical Reference | `documents/reference/technical/` | English | API docs, guides |
+| Paper Summaries | `documents/reference/papers/` | English | Research summaries |
+| Templates | `documents/templates/` | English | Standard forms |
 
 ---
 
