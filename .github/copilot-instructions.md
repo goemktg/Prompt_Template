@@ -162,9 +162,38 @@ Only handle a task without subagents if **ALL** of the following are true, or if
 If **any** of the above is false → the task is substantive → **MUST delegate via `runSubagent`**.
 
 **Decision flow (apply in order):**
-1. Run the Pre-Response Delegation Gate (§ 0-GATE) FIRST — before any other action or output.
-2. If gate result is "delegate" → Identify appropriate subagent(s) and call `runSubagent` immediately.
-3. If gate result is "direct" → Answer in ≤3 sentences without tool calls.
+1. Check the skill index (§ 0-SKILL) — if a registered skill covers the task, load and execute it directly.
+2. Run the Pre-Response Delegation Gate (§ 0-GATE) FIRST — before any other action or output.
+3. If gate result is "delegate" → Identify appropriate subagent(s) and call `runSubagent` immediately.
+4. If gate result is "direct" → Answer in ≤3 sentences without tool calls.
+
+#### 0-SKILL) Skill-First Pre-Gate Check
+🟡 **Execute BEFORE §0-GATE.**
+
+Check whether the user's request maps to a registered skill in the session's skill index (`<skills>` in chat context).
+
+| Condition | Action |
+|---|---|
+| Task matches a registered skill's domain | Load the SKILL.md via `readFile` and execute its protocol. **Skip §0-GATE** for the skill's core execution scope. |
+| No skill match found | Proceed to §0-GATE normally. |
+
+**Registered skills** (auto-discovered from `.github/skills/*/SKILL.md`):
+
+| Skill | Trigger Keywords | Execution Mode | Reason |
+|---|---|---|---|
+| `commit-skill` | 커밋, commit, save changes with git | **Main agent direct** | Requires interactive user confirmation gate — subagent cannot pause for input |
+| `documentation` | 문서 작성, write doc, create report, publish | **Delegate → `@doc-writer`** | Non-interactive; specialist subagent produces higher quality output |
+| `code-review` | 코드 리뷰, review changes, review before merge | **Delegate → `@code-quality-reviewer`** | Non-interactive; dedicated review subagent |
+| `deep-research` | 리서치, 연구, research, investigate (multi-source) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude`** | Non-interactive; multi-source research subagents |
+| `data-analysis` | 결과 분석, analyze results, compare metrics | **Delegate → `@Explore` + main agent** | Non-interactive; exploration + synthesis pattern |
+| `skill-extension` | 스킬 만들기, create new skill, new SKILL.md | **Delegate → `@code-generator`** | Non-interactive; structured file generation |
+| `external-skill-generation` | 외부 문서로 스킬, import external skill | **Main agent direct** | Requires step-by-step security review gates between phases |
+
+**Execution rules**:
+- **Main agent direct**: Load SKILL.md via `readFile`, follow its protocol in the current session. Do NOT wrap in a subagent.
+- **Delegate**: Load SKILL.md via `readFile` to extract the protocol, then pass the protocol + user context to the specified subagent. The subagent executes the skill steps and returns results to the main session.
+
+> Subagents called **within** a skill's own protocol are still allowed and governed by the skill's instructions.
 
 #### 0-GATE) Mandatory Pre-Response Delegation Gate
 🔴 **Execute this gate BEFORE generating any response or taking any action.**

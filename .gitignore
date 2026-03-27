@@ -1,3 +1,4 @@
 .copilot-memory/
 __pycache__/
 CONTRIBUTING.md
+references/*

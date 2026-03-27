@@ -205,15 +205,15 @@ Use this table to identify which agent to call for each task type. When multiple
 
 ## Available Skills
 
-| Skill | Description |
-| :--- | :--- |
-| `documentation` | Standardized documentation creation and formatting |
-| `code-review` | Code quality checklist and best practices enforcement |
-| `deep-research` | Recursive research workflow (STORM-style) |
-| `data-analysis` | Result visualization and statistical comparison |
-| `skill-extension` | Create and extend agent skills |
-| `external-skill-generation` | Generate skills from external documentation |
-| `commit-skill` | Commit workflow skill with diff-based message generation and explicit user confirmation gate before `git commit` |
+| Skill | Description | Execution Mode |
+| :--- | :--- | :--- |
+| `documentation` | Standardized documentation creation and formatting | **Delegate → `@doc-writer`** |
+| `code-review` | Code quality checklist and best practices enforcement | **Delegate → `@code-quality-reviewer`** |
+| `deep-research` | Recursive research workflow (STORM-style) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude`** |
+| `data-analysis` | Result visualization and statistical comparison | **Delegate → `@Explore` + main agent** |
+| `skill-extension` | Create and extend agent skills | **Delegate → `@code-generator`** |
+| `external-skill-generation` | Generate skills from external documentation | **Main agent direct** (security gates) |
+| `commit-skill` | Commit workflow with diff-based message generation and explicit user confirmation gate before `git commit` | **Main agent direct** (interactive gate) |
 
 ## Adding Custom Agents
 

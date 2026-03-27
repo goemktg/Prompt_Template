@@ -1,69 +1,63 @@
 ---
 name: commit-skill
-description: 'Strict workflow for Git commits: inspect changes since last commit, generate a Conventional Commits message, show summary, and require explicit user confirmation before commit. Use when user says "커밋 진행", "커밋", "commit", "commit 진행", or asks to save changes with git.'
+description: 'Strict workflow for Git commits: inspect changes since last commit, generate a Conventional Commits message, show summary, and require explicit user confirmation before commit.'
 ---
 
-# Commit Skill
+# commit-skill
 
-Use this skill when the user wants to create a git commit.
+## Usage
+
+Use this skill when the user asks to commit or save current git changes.
 
 ## Trigger Intents
 
-- "커밋 진행"
-- "커밋해줘"
-- "commit this"
-- "create commit"
-- "save changes with git"
+- 커밋 진행
+- 커밋
+- commit
+- commit 진행
+- save changes with git
 
 ## Mandatory Safety Rule
 
-Never run `git commit` without explicit user approval in the current conversation turn.
+Never run git commit without explicit approval in the current conversation turn.
 
 ## Change Inspection Rule
 
-Do not inspect changes by directly composing ad-hoc git read commands in chat.
-Always execute the OS-appropriate inspection script first and base analysis on its output.
+Always run the OS-appropriate inspection script first. Base analysis on script output only.
 
-- macOS/Linux: `sh .github/skills/commit-skill/scripts/inspect-changes.sh`
-- Windows: `cmd /c .github\\skills\\commit-skill\\scripts\\inspect-changes.cmd`
+- macOS/Linux: sh .github/skills/commit-skill/scripts/inspect-changes.sh
+- Windows: cmd /c .github\skills\commit-skill\scripts\inspect-changes.cmd
 
 ## Workflow
 
-1. Inspect current working tree and changes since last commit by running the OS-appropriate inspection script.
-2. Summarize changed files and core intent of the change.
-3. Generate a commit message candidate using Conventional Commits style.
-4. Present a confirmation message to the user in this form:
-   - "다음 내용으로 커밋을 생성합니다: <message>. 진행할까요?"
-5. Wait for explicit approval.
-6. Only after approval, stage relevant files and execute commit with the approved message.
+1. Inspect working tree and changes since HEAD with the inspection script.
+2. Summarize changed files and change intent.
+3. Generate a Conventional Commits candidate message.
+4. Ask for explicit confirmation before commit.
+5. On approval, stage relevant files and execute commit.
 
-## Commit Message Generation Rules
+## Commit Message Rules
 
-- Base analysis on diff since last commit (`HEAD`) including staged and unstaged changes.
-- Use a bilingual commit message structure:
-   - Main commit subject (first line): English only, format `<type>(<scope>): <subject>`.
-   - Detailed body (following lines): Korean bullet points summarizing key changes.
-- Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `style`, `perf`.
-- Keep subject concise and specific.
-- Body bullets should be concrete and file/change oriented.
-- If multiple unrelated changes are present, suggest splitting commits.
+- Analyze staged and unstaged changes since HEAD.
+- Subject format: <type>(<scope>): <subject> in English.
+- Optional body: concise Korean bullets for change details.
+- Allowed types: feat, fix, docs, refactor, test, chore, style, perf.
+- If unrelated changes exist, recommend commit split.
 
-## Confirmation and Execution Rules
+## Confirmation Rules
 
-- Approval examples: "진행", "커밋해", "yes", "approve".
-- Rejection examples: "취소", "아니오", "cancel", "stop".
-- Ambiguous responses: ask a clarification question and do not commit.
+- Approve examples: 진행, yes, approve, 커밋해.
+- Reject examples: 취소, no, cancel, stop.
+- Ambiguous input: ask clarification and do not commit.
 
-## Failure and Edge Cases
+## Failure Handling
 
-- No changes detected: report and stop.
-- Commit fails: show error, preserve state, and ask whether to retry with adjusted message.
-- Protected branch concerns: warn user before commit if branch appears protected (`main`, `master`, `develop`).
-- Inspection script fails: show script error output and stop before commit proposal.
+- No changes: report and stop.
+- Inspection script failure: report script error and stop.
+- Commit failure: report error and ask retry intent.
+- Protected branch warning: alert for main, master, or develop.
 
 ## Output Template
-
-Use this response template before commit execution:
 
 ```text
 변경 요약:
@@ -78,3 +72,4 @@ Use this response template before commit execution:
 
 위 메시지로 커밋을 생성할까요?
 ```
+
