@@ -8,7 +8,7 @@ tools:
   - memory/memory_store
   - memory/memory_search
 argument-hint: 'Paper topic, research question, or specific paper ID to analyze'
-model: Claude Sonnet 4.5 (copilot)
+model: GPT-5.2 (copilot)
 target: vscode
 user-invocable: false
 ---

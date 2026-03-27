@@ -6,7 +6,7 @@ tools:
   - memory/*
   - ms-vscode.vscode-websearchforcopilot/websearch
   - sequentialthinking/sequentialthinking
-model: Claude Sonnet 4.5 (copilot)
+model: Claude Sonnet 4.6 (copilot)
 target: vscode
 user-invocable: false
 ---

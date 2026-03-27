@@ -2,7 +2,7 @@
 name: code-quality-reviewer
 description: 'Tier 1/2 Quality Gate. Validates production-readiness before delivery. SRP: Quality validation only (no fixes).'
 argument-hint: "Provide code; receive Tier 1/2 validation verdict and improvement suggestions."
-model: Gemini 3 Pro (Preview) (copilot)
+model: Gemini 3.1 Pro (Preview)
 target: vscode
 user-invocable: false
 tools:

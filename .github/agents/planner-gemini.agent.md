@@ -1,7 +1,7 @@
 ---
 name: planner-gemini
 description: 'Universal feasibility and resource planning agent. Validates hard constraints, computes explicit budgets, and produces mathematically verified plans with confidence annotations.'
-model: Gemini 3 Pro (Preview) (copilot)
+model: Gemini 3.1 Pro (Preview)
 target: vscode
 user-invocable: false
 tools:

@@ -2,7 +2,7 @@
 name: idea-generator-gemini
 description: 'Feasibility-focused idea generator. Specializes in quantitative analysis of technical viability, resource optimization, and market sizing.'
 argument-hint: 'Provide problem statement or domain; receive ranked ideas with feasibility scores and resource estimates.'
-model: Gemini 3 Pro (Preview)
+model: Gemini 3.1 Pro (Preview)
 user-invocable: false
 tools:
   - read

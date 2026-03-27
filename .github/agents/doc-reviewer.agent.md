@@ -2,7 +2,7 @@
 name: doc-reviewer
 description: 'Documentation Quality Review. Checks clarity, accuracy, completeness, and consistency. SRP: Review only (no writing).'
 argument-hint: "Provide doc paths; receive APPROVED/ISSUES with actionable fixes."
-model: Claude Opus 4.5 (copilot)
+model: Claude Opus 4.6 (copilot)
 target: vscode
 user-invocable: false
 tools:

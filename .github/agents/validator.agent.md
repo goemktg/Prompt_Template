@@ -2,7 +2,7 @@
 name: validator
 description: 'Deep-validate ideas (methodology/theory correctness) by calling research-gpt/gemini subagents, then produce an approval verdict'
 argument-hint: 'Paste the idea set (or memory keys/tags) + any constraints (time/budget/privacy) + desired rigor level'
-model: Gemini 3 Pro (Preview) (copilot)
+model: Gemini 3.1 Pro (Preview)
 target: vscode
 user-invocable: false
 tools:

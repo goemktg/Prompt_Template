@@ -2,7 +2,7 @@
 name: fixer
 description: 'Autonomous bug diagnosis and targeted fixing with rigorous execution verification. Reproduces issues, identifies root causes, applies minimal fixes, and verifies corrections via testing. Universal across software, research, infrastructure, and mod development projects.'
 argument-hint: "Describe the issue/failure. Examples: 'Runtime error in payment handler', 'Test suite timeout', 'Type checking failures in API module', 'Memory leak in data pipeline', 'Build failure: missing dependency'"
-model: Claude Sonnet 4.5 (copilot)
+model: Claude Sonnet 4.6 (copilot)
 target: vscode
 user-invocable: false
 tools:

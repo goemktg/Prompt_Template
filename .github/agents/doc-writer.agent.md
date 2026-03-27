@@ -2,7 +2,7 @@
 name: doc-writer
 description: 'Professional documentation generation for README, API docs, guides, tutorials, and examples. Produces developer-first documentation with clear examples and multiple skill levels.'
 argument-hint: "Provide project context, code files, and documentation requirements; receive comprehensive, production-ready documentation."
-model: Gemini 3 Pro (Preview) (copilot)
+model: Gemini 3.1 Pro (Preview)
 target: vscode
 user-invocable: false
 tools:

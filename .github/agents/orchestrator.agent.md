@@ -2,7 +2,7 @@
 name: orchestrator
 description: 'Universal project orchestration planner for any project type—software, research, infrastructure, game mods. Defines strategy, subagent sequence, and execution guidance for the main session.'
 argument-hint: "Describe your goal. Examples: 'Feature: add user authentication', 'Fix: resolve CI pipeline timeout', 'Research: compare optimization approaches', 'Setup: initialize project environment'"
-model: Claude Sonnet 4.5 (copilot)
+model: Claude Sonnet 4.6 (copilot)
 target: vscode
 user-invocable: false
 tools:

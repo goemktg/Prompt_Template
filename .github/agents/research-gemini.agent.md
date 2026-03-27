@@ -2,7 +2,7 @@
 name: research-gemini
 description: 'Implementation-focused deep research agent. Analyzed papers for practical methods, code patterns, computational requirements, and reproducible experimental setup. Extracts actionable implementation guidance.'
 argument-hint: 'topic::string (required), paper_ids::array[string] (optional), depth::enum[summary|full|reproduction] (default: full)'
-model: Claude Sonnet 4.5 (copilot)
+model: Gemini 3.1 Pro (Preview)
 target: vscode
 user-invocable: false
 tools:
