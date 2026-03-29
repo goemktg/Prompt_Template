@@ -188,6 +188,7 @@ Check whether the user's request maps to a registered skill in the session's ski
 | `data-analysis` | 결과 분석, analyze results, compare metrics | **Delegate → `@Explore` + main agent** | Non-interactive; exploration + synthesis pattern |
 | `skill-extension` | 스킬 만들기, create new skill, new SKILL.md | **Delegate → `@code-generator`** | Non-interactive; structured file generation |
 | `external-skill-generation` | 외부 문서로 스킬, import external skill | **Main agent direct** | Requires step-by-step security review gates between phases |
+| `prompt-master` | 프롬프트 작성, 프롬프트 최적화, write a prompt, optimize this prompt | **Delegate → `@prompt-master`** | Non-interactive; produces research-backed prompts from 100+ papers |
 
 **Execution rules**:
 - **Main agent direct**: Load SKILL.md via `readFile`, follow its protocol in the current session. Do NOT wrap in a subagent.

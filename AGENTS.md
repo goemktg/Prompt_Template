@@ -202,6 +202,7 @@ Use this table to identify which agent to call for each task type. When multiple
 | **Research lineage / citation** | `@citation-tracer` | Builds research lineage via DFS citation chaining. Identifies foundational papers. | "find foundational papers for", "citation chain for" |
 | **Pattern extraction from history** | `@experience-curator` | Learns from project history. Extracts reusable patterns from logs, failures, and reviews. | "what did we learn?", "extract patterns from" |
 | **Codebase exploration / Q&A** | `@Explore` | Fast read-only codebase exploration and Q&A. | "where is X defined?", "how does Y work?" |
+| **Research-backed prompt engineering** | `@prompt-master` | Generates and optimizes prompts using 100+ peer-reviewed papers (CoT, APO, meta-prompting, ReAct, etc.). Updates paper DB monthly. | "write a prompt for", "optimize this prompt", "which prompting technique", "prompt for agent", "프롬프트 작성", "프롬프트 최적화" |
 
 ## Available Skills
 
@@ -212,6 +213,7 @@ Use this table to identify which agent to call for each task type. When multiple
 | `deep-research` | Recursive research workflow (STORM-style) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude`** |
 | `data-analysis` | Result visualization and statistical comparison | **Delegate → `@Explore` + main agent** |
 | `skill-extension` | Create and extend agent skills | **Delegate → `@code-generator`** |
+| `paper-catalog-update` | Monthly update workflow for prompt engineering paper catalog (freshness check, scoring, add/retire, metadata sync) | **Delegate → `@prompt-master`** |
 | `external-skill-generation` | Generate skills from external documentation | **Main agent direct** (security gates) |
 | `commit-skill` | Commit workflow with diff-based message generation and explicit user confirmation gate before `git commit` | **Main agent direct** (interactive gate) |
 
