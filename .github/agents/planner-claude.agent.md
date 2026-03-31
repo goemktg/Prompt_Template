@@ -1,6 +1,7 @@
 ---
 name: planner-claude
-description: 'Universal planning agent focused on risk quantification, QA gates, safety verification, testing protocols, and pre-mortem analysis for any domain.'
+description: 'Risk-aware planning with QA gates, safety verification, testing protocols, and pre-mortem analysis. Triggers: risk assessment, what could go wrong, safety analysis, test strategy, QA plan.'
+argument-hint: 'Describe the plan or system to risk-assess. Examples: "Risk analysis for payment refactor", "QA gates for auth module", "Pre-mortem for database migration"'
 tools:
   - context7/*
   - memory/*

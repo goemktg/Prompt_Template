@@ -1,7 +1,7 @@
 ---
 name: math-reviewer
-description: 'Mathematical correctness reviewer. Verifies equations, dimensional consistency, numerical stability, and mathematical properties of implementations.'
-argument-hint: 'Provide source material (research paper, specification) and implementation code; receive mathematical correctness assessment.'
+description: 'Mathematical correctness reviewer. Verifies equations, dimensional consistency, numerical stability, and mathematical properties of implementations against specifications. Triggers: verify formula, check math, is this equation correct, dimensional analysis, numerical stability.'
+argument-hint: 'Provide source material (paper, spec) and implementation code. Examples: "Verify gradient computation in optimizer", "Check dimensional consistency in physics sim", "Numerical stability of loss function"'
 model: GPT-5.2
 user-invocable: false
 tools:

@@ -1,7 +1,7 @@
 ---
 name: validator
-description: 'Deep-validate ideas (methodology/theory correctness) by calling research-gpt/gemini subagents, then produce an approval verdict'
-argument-hint: 'Paste the idea set (or memory keys/tags) + any constraints (time/budget/privacy) + desired rigor level'
+description: 'Cross-model idea validation for methodology and theory correctness. Coordinates research-gpt and research-gemini for multi-perspective verification. Triggers: validate idea, is this approach correct, methodology check, theory validation.'
+argument-hint: 'Provide the idea set (or memory keys/tags), constraints (time/budget/privacy), and desired rigor level. Examples: "Validate caching strategy", "Is this auth approach correct?", "Theory check for optimization"'
 model: Gemini 3.1 Pro (Preview)
 target: vscode
 user-invocable: false

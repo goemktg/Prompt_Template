@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: 'Run a production-focused review for correctness, regressions, policy compliance, and maintainability before merge or commit.'
+description: 'Pre-merge/commit code review for correctness, regressions, policy compliance, and maintainability. Triggers: review code, code review, review before merge, check this PR, review changes.'
 ---
 
 # code-review

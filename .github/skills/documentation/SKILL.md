@@ -1,6 +1,6 @@
 ---
 name: documentation
-description: 'Create and maintain project documents with strict language and path policy, from drafts to final publication-ready deliverables.'
+description: 'Create and maintain project documents (drafts, final, reference) with strict language and path policy. Triggers: write doc, create documentation, document this, publish report.'
 ---
 
 # documentation

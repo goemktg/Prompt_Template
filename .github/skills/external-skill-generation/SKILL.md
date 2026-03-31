@@ -1,6 +1,6 @@
 ---
 name: external-skill-generation
-description: 'Generate safe draft skills from external sources using a quarantine-first workflow, then rewrite into compliant local SKILL.md files.'
+description: 'Generate local skills from external sources using quarantine-first security workflow. Triggers: import external skill, generate skill from docs, external documentation to skill.'
 ---
 
 # external-skill-generation

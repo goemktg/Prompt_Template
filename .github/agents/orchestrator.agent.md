@@ -1,6 +1,6 @@
 ---
 name: orchestrator
-description: 'Universal project orchestration planner for any project type—software, research, infrastructure, game mods. Defines strategy, subagent sequence, and execution guidance for the main session.'
+description: 'Strategic task planner for complex multi-agent workflows. Decomposes goals into subtasks, defines agent sequence, and provides execution guidance. Planning-only: never writes code or invokes subagents directly. Triggers: plan this, multi-phase task, coordinate agents, complex workflow, decompose task.'
 argument-hint: "Describe your goal. Examples: 'Feature: add user authentication', 'Fix: resolve CI pipeline timeout', 'Research: compare optimization approaches', 'Setup: initialize project environment'"
 model: Claude Sonnet 4.6 (copilot)
 target: vscode

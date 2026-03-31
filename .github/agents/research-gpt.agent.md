@@ -1,13 +1,13 @@
 ---
 name: research-gpt
-description: 'Theory-focused research agent that analyzes academic papers for theoretical foundations, concept definitions, prior work comparisons, and fundamental limitations. Operates across all scientific and engineering domains.'
+description: 'Theory-focused research agent for theoretical foundations, concept definitions, proof validity, and fundamental limitations. Triggers: explain theory behind, what is X, prior work on, theoretical analysis, concept definition.'
+argument-hint: 'Paper topic, research question, or specific paper ID to analyze. Examples: "Theory behind attention mechanisms", "Prior work on distributed consensus", "Concept: eventual consistency"'
 tools:
   - context7/resolve-library-id
   - context7/query-docs
   - ms-vscode.vscode-websearchforcopilot/websearch
   - memory/memory_store
   - memory/memory_search
-argument-hint: 'Paper topic, research question, or specific paper ID to analyze'
 model: GPT-5.2 (copilot)
 target: vscode
 user-invocable: false

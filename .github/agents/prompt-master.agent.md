@@ -1,6 +1,6 @@
 ---
 name: prompt-master
-description: 'Expert prompt engineer. Generates research-backed, highest-performance prompts for any task by applying techniques proven in academic literature (CoT, APO, meta-prompting, structured output, role design, etc.). Use when: writing system prompts, crafting agent instructions, optimizing existing prompts, selecting prompting strategy per task, designing few-shot examples, auto-optimizing prompts. Reference: documents/reference/papers/prompt-engineering-papers.md (index) + 12 category files each targeting 100 papers. Uses paper-catalog-update skill for monthly DB maintenance.'
+description: 'Research-grounded prompt engineering: writes, optimizes prompts, and selects techniques. Runs and improves the prompt paper catalog update procedure. Triggers: write prompt, optimize prompt, select technique, update catalog, improve catalog procedure.'
 tools:
   - read
   - edit

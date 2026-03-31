@@ -1,6 +1,6 @@
 ---
 name: paper-catalog-update
-description: 'Maintain the prompt engineering paper catalog with a monthly update protocol, scoring rules, and safe add-retire operations.'
+description: 'Monthly prompt engineering paper catalog update with scoring rules and safe add/retire operations. Triggers: update paper catalog, refresh paper DB, paper database update.'
 ---
 
 # paper-catalog-update

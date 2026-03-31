@@ -1,6 +1,7 @@
 ---
 name: planner-gpt
-description: 'Universal architecture-first planning agent. Produces component blueprints, interface contracts, Mermaid diagrams, and structurally verified implementation strategies with quantified validation.'
+description: 'Architecture-first planning agent. Produces component blueprints, interface contracts, Mermaid diagrams, and structural implementation strategies. Triggers: plan the architecture, design strategy, component blueprint, interface design.'
+argument-hint: 'Describe the system or feature to plan. Examples: "Architecture plan for auth service", "Component blueprint for payment module", "Interface design for API gateway"'
 model: GPT-5.2 (copilot)
 target: vscode
 user-invocable: false

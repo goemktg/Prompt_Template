@@ -1,7 +1,7 @@
 ---
 name: doc-reviewer
-description: 'Documentation Quality Review. Checks clarity, accuracy, completeness, and consistency. SRP: Review only (no writing).'
-argument-hint: "Provide doc paths; receive APPROVED/ISSUES with actionable fixes."
+description: 'Documentation Quality Review for clarity, accuracy, completeness, and consistency. Returns APPROVED/ISSUES with actionable fixes. Triggers: review this doc, check documentation, doc quality, is this doc accurate. SRP: Review only (no writing).'
+argument-hint: "Provide doc paths. Examples: 'Review README.md', 'Check API docs accuracy', 'Doc quality review for guides/'"
 model: Claude Opus 4.6 (copilot)
 target: vscode
 user-invocable: false

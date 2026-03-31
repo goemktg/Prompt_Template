@@ -1,7 +1,7 @@
 ---
 name: idea-generator-gpt
-description: 'System architecture specialist. Generates ideas focused on system design, business models, and strategic scalability.'
-argument-hint: 'Provide problem statement, domain, or design challenge. Receive architecture-focused ideas with patterns, business models, and system diagrams.'
+description: 'System architecture idea generator. Specializes in system design, business models, strategic scalability, and structural patterns. Triggers: system design ideas, scalable architecture, business model options, strategic approach.'
+argument-hint: 'Provide problem statement, domain, or design challenge. Examples: "Scalable architecture for user service", "Business model options for API", "System design approaches for messaging"'
 model: GPT-5.2
 user-invocable: false
 tools:

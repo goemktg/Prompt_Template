@@ -201,8 +201,8 @@ Use this table to identify which agent to call for each task type. When multiple
 | **Architecture-focused ideas** | `@idea-generator-gpt` | System Architecture & Business Strategy Ideas. | "what's the best system design for", "scalable architecture" |
 | **Research lineage / citation** | `@citation-tracer` | Builds research lineage via DFS citation chaining. Identifies foundational papers. | "find foundational papers for", "citation chain for" |
 | **Pattern extraction from history** | `@experience-curator` | Learns from project history. Extracts reusable patterns from logs, failures, and reviews. | "what did we learn?", "extract patterns from" |
-| **Codebase exploration / Q&A** | `@Explore` | Fast read-only codebase exploration and Q&A. | "where is X defined?", "how does Y work?" |
-| **Research-backed prompt engineering** | `@prompt-master` | Generates and optimizes prompts using 100+ peer-reviewed papers (CoT, APO, meta-prompting, ReAct, etc.). Updates paper DB monthly. | "write a prompt for", "optimize this prompt", "which prompting technique", "prompt for agent", "프롬프트 작성", "프롬프트 최적화" |
+| **Codebase exploration / Q&A** | `search_subagent` (built-in) | VS Code built-in codebase exploration tool. Fast read-only search and Q&A. Not a custom agent file. | "where is X defined?", "how does Y work?", "find files matching" |
+| **Research-backed prompt engineering** | `@prompt-master` | Generates and optimizes prompts using 100+ peer-reviewed papers (CoT, APO, meta-prompting, ReAct, etc.). Updates paper DB monthly. | "write a prompt for", "optimize this prompt", "which prompting technique", "select prompt technique", "update prompt paper catalog", "run catalog update procedure", "improve catalog update procedure", "prompt for agent" |
 
 ## Available Skills
 
@@ -211,7 +211,7 @@ Use this table to identify which agent to call for each task type. When multiple
 | `documentation` | Standardized documentation creation and formatting | **Delegate → `@doc-writer`** |
 | `code-review` | Code quality checklist and best practices enforcement | **Delegate → `@code-quality-reviewer`** |
 | `deep-research` | Recursive research workflow (STORM-style) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude`** |
-| `data-analysis` | Result visualization and statistical comparison | **Delegate → `@Explore` + main agent** |
+| `data-analysis` | Result visualization and statistical comparison | **Delegate → `search_subagent` (built-in) + main agent** |
 | `skill-extension` | Create and extend agent skills | **Delegate → `@code-generator`** |
 | `paper-catalog-update` | Monthly update workflow for prompt engineering paper catalog (freshness check, scoring, add/retire, metadata sync) | **Delegate → `@prompt-master`** |
 | `external-skill-generation` | Generate skills from external documentation | **Main agent direct** (security gates) |

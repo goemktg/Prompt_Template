@@ -181,14 +181,14 @@ Check whether the user's request maps to a registered skill in the session's ski
 
 | Skill | Trigger Keywords | Execution Mode | Reason |
 |---|---|---|---|
-| `commit-skill` | 커밋, commit, save changes with git | **Main agent direct** | Requires interactive user confirmation gate — subagent cannot pause for input |
-| `documentation` | 문서 작성, write doc, create report, publish | **Delegate → `@doc-writer`** | Non-interactive; specialist subagent produces higher quality output |
-| `code-review` | 코드 리뷰, review changes, review before merge | **Delegate → `@code-quality-reviewer`** | Non-interactive; dedicated review subagent |
-| `deep-research` | 리서치, 연구, research, investigate (multi-source) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude`** | Non-interactive; multi-source research subagents |
-| `data-analysis` | 결과 분석, analyze results, compare metrics | **Delegate → `@Explore` + main agent** | Non-interactive; exploration + synthesis pattern |
-| `skill-extension` | 스킬 만들기, create new skill, new SKILL.md | **Delegate → `@code-generator`** | Non-interactive; structured file generation |
-| `external-skill-generation` | 외부 문서로 스킬, import external skill | **Main agent direct** | Requires step-by-step security review gates between phases |
-| `prompt-master` | 프롬프트 작성, 프롬프트 최적화, write a prompt, optimize this prompt | **Delegate → `@prompt-master`** | Non-interactive; produces research-backed prompts from 100+ papers |
+| `commit-skill` | commit, save changes with git | **Main agent direct** | Requires interactive user confirmation gate — subagent cannot pause for input |
+| `documentation` | write doc, create report, publish | **Delegate → `@doc-writer`** | Non-interactive; specialist subagent produces higher quality output |
+| `code-review` | review changes, review before merge | **Delegate → `@code-quality-reviewer`** | Non-interactive; dedicated review subagent |
+| `deep-research` | research, investigate (multi-source) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude`** | Non-interactive; multi-source research subagents |
+| `data-analysis` | analyze results, compare metrics | **Delegate → `search_subagent` (built-in) + main agent** | Non-interactive; exploration + synthesis pattern |
+| `skill-extension` | create new skill, new SKILL.md | **Delegate → `@code-generator`** | Non-interactive; structured file generation |
+| `external-skill-generation` | import external skill | **Main agent direct** | Requires step-by-step security review gates between phases |
+| `paper-catalog-update` | update prompt paper catalog, run catalog update procedure, improve catalog update procedure | **Delegate → `@prompt-master`** | Non-interactive; produces research-backed prompts from 100+ papers |
 
 **Execution rules**:
 - **Main agent direct**: Load SKILL.md via `readFile`, follow its protocol in the current session. Do NOT wrap in a subagent.
@@ -279,6 +279,21 @@ Required reporting for chained runs:
 - per-step status (`completed`, `failed`, `replanned`)
 - final integration summary
 
+#### 2.2) Mandatory Todo For Multi-Step Resilience
+
+🔴 **MANDATORY**: For every multi-step substantive task, you must initialize and maintain a todo list via `manage_todo_list`.
+
+Required behavior:
+1. Initialize todo list immediately after execution planning is finalized.
+2. Keep exactly one `in-progress` item at a time and update statuses after each step.
+3. If a step fails, record the failed step in todo state first, then replan.
+4. Before any replanning call, ensure todo state reflects completed, failed, and pending steps.
+5. After replanning, update todo items to preserve continuity instead of restarting from an empty plan.
+
+Failure-continuity rule:
+- Intermediate failure must not reset execution context. The todo list is the canonical state for recovery and resume.
+- If the todo list is missing or stale, refresh it before continuing execution.
+
 #### 3) Parallel Delegation
 If subtasks are independent, invoke subagents in **parallel** (simultaneous `runSubagent` calls).
 
@@ -353,7 +368,7 @@ User: "Explain how this function works."
 
 ✅ CORRECT:
   [0-GATE] G1=YES(codebase exploration required), G3=YES(file reading) → Delegate
-  [@Explore] called → analyzes function behavior, then explains
+  [search_subagent] called → analyzes function behavior, then explains
 ```
 
 **Example C — Genuine Direct Answer**

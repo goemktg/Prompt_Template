@@ -1,8 +1,9 @@
 ---
 name: experience-curator
-description: 'Knowledge curator. Extracts reusable patterns from project history, failures, experiments, and reviews. Structures insights as actionable memory for planning and orchestration.'
-argument-hint: "Provide logs, failures, reviews, experiment history, or past decisions; receive curated patterns and lessons learned as structured memory."
+description: 'Knowledge curator that extracts reusable patterns from project history, failures, experiments, and reviews. Triggers: lessons learned, extract patterns, what did we learn, curate knowledge, post-mortem insights.'
+argument-hint: 'Provide logs, failures, reviews, experiment history, or past decisions. Examples: "Extract patterns from CI failures", "Lessons from auth refactor", "Curate experiment results"'
 model: Claude Haiku 4.5
+user-invocable: false
 tools:
   - read
   - search

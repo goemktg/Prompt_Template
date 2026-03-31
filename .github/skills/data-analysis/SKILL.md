@@ -1,6 +1,6 @@
 ---
 name: data-analysis
-description: 'Analyze experiment results into reproducible metrics, charts, and Korean decision summaries aligned with project artifact paths.'
+description: 'Experiment result analysis with reproducible metrics, charts, and Korean decision summaries. Triggers: analyze results, compare metrics, visualize data, experiment analysis.'
 ---
 
 # data-analysis

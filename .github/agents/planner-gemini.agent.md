@@ -1,6 +1,7 @@
 ---
 name: planner-gemini
-description: 'Universal feasibility and resource planning agent. Validates hard constraints, computes explicit budgets, and produces mathematically verified plans with confidence annotations.'
+description: 'Feasibility and resource planning agent. Validates hard constraints, computes explicit budgets (memory, compute, bandwidth, time), and produces mathematically verified plans. Triggers: is this feasible, estimate resources, budget planning, resource constraints.'
+argument-hint: 'Describe the plan or feature to assess. Examples: "Is real-time sync feasible with 10K users?", "Resource estimate for ML inference", "Budget for database migration"'
 model: Gemini 3.1 Pro (Preview)
 target: vscode
 user-invocable: false

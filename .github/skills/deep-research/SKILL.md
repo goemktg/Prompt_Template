@@ -1,6 +1,6 @@
 ---
 name: deep-research
-description: 'Perform multi-source, citation-backed research and deliver Korean reports with traceable evidence and practical recommendations.'
+description: 'Multi-source, citation-backed research with Korean reports and traceable evidence. Triggers: research topic, investigate, deep research, multi-source analysis.'
 ---
 
 # deep-research

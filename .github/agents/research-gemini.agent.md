@@ -1,7 +1,7 @@
 ---
 name: research-gemini
-description: 'Implementation-focused deep research agent. Analyzed papers for practical methods, code patterns, computational requirements, and reproducible experimental setup. Extracts actionable implementation guidance.'
-argument-hint: 'topic::string (required), paper_ids::array[string] (optional), depth::enum[summary|full|reproduction] (default: full)'
+description: 'Implementation-focused research agent. Analyzes papers for practical methods, code patterns, computational requirements, and reproducible setups. Triggers: how to implement X, API usage for, implementation guide, practical methods, code patterns.'
+argument-hint: 'Topic (required), optional paper IDs, depth (summary|full|reproduction). Examples: "How to implement RAFT consensus", "API usage for Redis clustering", "Reproduction setup for transformer training"'
 model: Gemini 3.1 Pro (Preview)
 target: vscode
 user-invocable: false

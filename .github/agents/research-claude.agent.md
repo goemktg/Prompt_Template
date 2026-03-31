@@ -1,6 +1,7 @@
 ---
 name: research-claude
-description: 'System complexity, safety, and resource analysis specialist. Performs deep technical research on system constraints, failure modes, and engineering trade-offs across any domain.'
+description: 'System complexity, safety, and resource analysis specialist. Performs deep research on constraints, failure modes, and engineering trade-offs. Triggers: system constraints, failure analysis, complexity research, resource limits, safety research.'
+argument-hint: 'Describe the system or topic to analyze for constraints and safety. Examples: "Failure modes of distributed cache", "Resource constraints for ML inference", "Safety analysis of auth flow"'
 tools:
   - context7/resolve-library-id
   - context7/query-docs

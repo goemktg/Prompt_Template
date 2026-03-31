@@ -1,7 +1,7 @@
 ---
 name: doc-writer
-description: 'Professional documentation generation for README, API docs, guides, tutorials, and examples. Produces developer-first documentation with clear examples and multiple skill levels.'
-argument-hint: "Provide project context, code files, and documentation requirements; receive comprehensive, production-ready documentation."
+description: 'Professional documentation generation for README, API docs, guides, tutorials, and examples. Produces developer-first documentation with clear examples and multiple skill levels. Triggers: write docs, document this, create README, API documentation, write guide.'
+argument-hint: "Provide project context, code files, and documentation requirements. Examples: 'Document the auth module', 'Create README for this project', 'Write API guide for users'"
 model: Gemini 3.1 Pro (Preview)
 target: vscode
 user-invocable: false

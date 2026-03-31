@@ -1,6 +1,6 @@
 ---
 name: skill-extension
-description: 'Create or refine a single-responsibility SKILL.md with valid frontmatter, clear triggers, and executable protocol for this template.'
+description: 'Create or refine single-responsibility SKILL.md files with valid frontmatter and executable protocol. Triggers: create new skill, new SKILL.md, improve skill, skill authoring.'
 ---
 
 # skill-extension
