@@ -149,23 +149,30 @@ Before taking any action (either tool calls _or_ responses to the user), you mus
 
 ### Subagent Auto-Invocation Policy (Strict)
 
-#### 0) Default Delegation Principle
-**Subagent delegation is the DEFAULT mode for ALL substantive tasks, every turn.**
-Only handle a task without subagents if **ALL** of the following are true, or if all subagent tooling is unavailable.
+#### 0) Tier-Based Responsibility Model
 
-**"Purely Conversational" — exact definition (ALL four must be true):**
+**Core principle**: The main session operates in three distinct tiers. Each tier has a designated handler and follows a different workflow.
+
+| Tier | Handler | Domain | Examples |
+|---|---|---|---|
+| **Tier 0** | Main session | Infrastructure & routing | Pre-flight version check, `0-GATE` evaluation, `runSubagent` invocation, orchestrator execution, todo/error recovery, **purely conversational** responses |
+| **Tier 1** | Main session | Interactive gates | Multi-turn user confirmation (`commit-skill`), step-by-step security review (`external-skill-generation`), user interrupts |
+| **Tier 2** | Subagent | All substantive work | Code, debugging, architecture, analysis, research, documentation, review, testing |
+
+**"Purely Conversational" — Tier 0 Carveout (ALL four must be true):**
 1. The response requires no file reads, code analysis, or codebase exploration.
 2. The full answer fits in ≤3 sentences using only training knowledge — no tool verification needed.
 3. No action (file edit, command execution, artifact creation) is taken or implied.
 4. The question is purely definitional or factual (e.g., "what does X mean?") — NOT analytical, explanatory, comparative, or investigative.
 
-If **any** of the above is false → the task is substantive → **MUST delegate via `runSubagent`**.
+This carveout allows Tier 0 routing to conclude with a direct response if no Tier 2 work is identified.
 
 **Decision flow (apply in order):**
-1. Check the skill index (§ 0-SKILL) — if a registered skill covers the task, load and execute it directly.
-2. Run the Pre-Response Delegation Gate (§ 0-GATE) FIRST — before any other action or output.
-3. If gate result is "delegate" → Identify appropriate subagent(s) and call `runSubagent` immediately.
-4. If gate result is "direct" → Answer in ≤3 sentences without tool calls.
+1. Check the skill index (§ 0-SKILL) — if a registered skill covers the task, determine if it maps to Tier 0, 1, or 2.
+2. **For Tier 0/1 skills**: Load SKILL.md and execute directly in the current session.
+3. **For Tier 2 skills or substantive tasks**: Run the Pre-Response Delegation Gate (§ 0-GATE) FIRST — before any other action or output.
+4. If gate result is "delegate" → Consult `AGENTS.md`, choose direct routing or `@orchestrator`, and call `runSubagent`.
+5. If gate result is "direct" (Tier 0 carveout confirmed) → Answer in ≤3 sentences without tool calls.
 
 #### 0-SKILL) Skill-First Pre-Gate Check
 🟡 **Execute BEFORE §0-GATE.**
@@ -177,205 +184,102 @@ Check whether the user's request maps to a registered skill in the session's ski
 | Task matches a registered skill's domain | Load the SKILL.md via `readFile` and execute its protocol. **Skip §0-GATE** for the skill's core execution scope. |
 | No skill match found | Proceed to §0-GATE normally. |
 
-**Registered skills** (auto-discovered from `.github/skills/*/SKILL.md`):
-
-| Skill | Trigger Keywords | Execution Mode | Reason |
-|---|---|---|---|
-| `commit-skill` | commit, save changes with git | **Main agent direct** | Requires interactive user confirmation gate — subagent cannot pause for input |
-| `documentation` | write doc, create report, publish | **Delegate → `@doc-writer`** | Non-interactive; specialist subagent produces higher quality output |
-| `code-review` | review changes, review before merge | **Delegate → `@code-quality-reviewer`** | Non-interactive; dedicated review subagent |
-| `deep-research` | research, investigate (multi-source) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude`** | Non-interactive; multi-source research subagents |
-| `data-analysis` | analyze results, compare metrics | **Delegate → `search_subagent` (built-in) + main agent** | Non-interactive; exploration + synthesis pattern |
-| `skill-extension` | create new skill, new SKILL.md | **Delegate → `@code-generator`** | Non-interactive; structured file generation |
-| `external-skill-generation` | import external skill | **Main agent direct** | Requires step-by-step security review gates between phases |
-| `paper-catalog-update` | update prompt paper catalog, run catalog update procedure, improve catalog update procedure | **Delegate → `@prompt-master`** | Non-interactive; produces research-backed prompts from 100+ papers |
-
-**Execution rules**:
-- **Main agent direct**: Load SKILL.md via `readFile`, follow its protocol in the current session. Do NOT wrap in a subagent.
-- **Delegate**: Load SKILL.md via `readFile` to extract the protocol, then pass the protocol + user context to the specified subagent. The subagent executes the skill steps and returns results to the main session.
-
-> Subagents called **within** a skill's own protocol are still allowed and governed by the skill's instructions.
+**Routing source of truth**:
+- See `AGENTS.md § Skill Routing` for the authoritative skill-to-execution mapping.
+- The main session decides only whether the request is a skill hit; it does not embed the full skill routing table.
+- When a skill resolves to Tier 2 work, load `SKILL.md`, extract the protocol, and delegate to the mapped agent.
+- When a skill resolves to Tier 0 or Tier 1 work, load `SKILL.md` and execute it directly in the main session.
 
 #### 0-GATE) Mandatory Pre-Response Delegation Gate
 🔴 **Execute this gate BEFORE generating any response or taking any action.**
 
-Answer each question YES or NO. If **ANY** answer is YES → **MUST delegate via `runSubagent`** before proceeding:
+The main session is responsible only for delegation gating. Answer these questions YES or NO. If **ANY** answer is YES → delegate before proceeding:
 
 | # | Gate Question | YES → |
 |---|---|---|
-| G1 | Does this touch any file, code, or codebase? | Delegate |
+| G1 | Does this touch files, code, or require codebase exploration? | Delegate |
 | G2 | Does this require more than 3 sentences to fully address? | Delegate |
-| G3 | Does this involve any action (edit, create, run, fix, explain-by-reading)? | Delegate |
-| G4 | Does this span more than 1 domain (code/arch/QA/docs/research/security)? | Delegate |
-| G5 | Would the answer benefit from tool-based verification (even if training data seems sufficient)? | Delegate |
-| G6 | Could an incorrect direct answer cause quality or correctness issues? | Delegate |
+| G3 | Would tool-based verification improve correctness or confidence? | Delegate |
 
 **All NO** → direct answer (≤3 sentences, no tools).
-**Any YES** → stop output, identify agents, call `runSubagent`.
+**Any YES** → consult `AGENTS.md`, identify the right agent or skill path, and delegate.
 
 ❌ **FORBIDDEN**: Generating a direct answer first and then noting "I should have used a subagent."
 ❌ **FORBIDDEN**: Starting to answer, then calling a subagent mid-response.
-✅ **REQUIRED**: The gate runs FIRST. The delegation decision is locked before any substantive output.
+❌ **FORBIDDEN**: Tier 2 (substantive work) responses generated directly by the main session outside Tier 0 preprocessing.
+✅ **REQUIRED**: Tier 0 routing runs FIRST. The delegation decision is locked before any substantive output.
 
 #### 1) Mandatory Invocation Triggers
-You **MUST** invoke at least one specialized subagent via `runSubagent` when **ANY** of the following is true (this list is non-exhaustive — when in doubt, delegate):
+If the 0-GATE fires, delegation is mandatory.
 
-1. Any code is being written, read for understanding, or modified.
-2. Any file is being created, edited, reviewed, or restructured.
-3. Any bug, error, failure, or unexpected behavior is being investigated or fixed.
-4. Any architecture, design, or planning decision is being made — including "where should X go?", "how should Y be structured?", "what's the best approach for Z?", or any question about component placement, responsibility boundaries, or structural trade-offs.
-5. Any documentation is being created, updated, or reviewed.
-6. Any analysis or verification is required — including explaining how existing code works, comparing alternatives, assessing trade-offs, or investigating root causes. Training knowledge alone is NOT sufficient; tool-based verification is required.
-7. The task requires 2+ logically distinct operations — meaning different tool categories, different agent specializations, or different phases of work (plan → implement → validate). File count is irrelevant.
-8. The task spans 2+ domains. Domains include: implementation, architecture, testing/QA, security, documentation, research, performance, and UX. When domain boundary is uncertain, assume multiple domains apply.
-9. The user asks for optimization, root-cause analysis, or production-quality validation.
-10. The expected work touches 2+ files or involves any refactoring.
-11. The task would benefit from external sources (documentation, library APIs, papers, or web references) — even if the agent believes it already knows the answer from training data.
-
-> **Scale threshold** — direct handling ONLY when **ALL** conditions are met:
-> - Diff is ≤5 lines total (additions + deletions combined)
-> - Exactly 1 file is modified
-> - Change is purely syntactic (whitespace, typo, rename) — **no logic changes**
-> - Zero security implications (no auth, crypto, input validation, or permissions code touched)
-> - No tests need to be written or updated as a result
-> - Impacted scope is ≤1 function or method
-> - The documentation MANDATORY rule (§5 Documentation Workflow) does **NOT** apply to this change
->
-> If **ANY** condition above is not met → scale threshold does NOT apply → use the appropriate subagent.
-
-If a trigger is met, do **NOT** proceed as a single-agent workflow unless blocked by tooling or user constraints.
+Use `AGENTS.md § Available Agents` to map the task to the responsible agent, and avoid embedding per-agent routing detail in the main prompt.
 
 #### 2) Agent Selection Rules
 
-> See **[AGENTS.md § Available Agents](../AGENTS.md)** for the full task-type → agent mapping table with example triggers.
+> See **[AGENTS.md § Available Agents](../AGENTS.md)** for the task-type → agent mapping table, and **[AGENTS.md § Skill Routing](../AGENTS.md)** for skill execution mode.
 
-When multiple agents apply, delegate to all relevant agents (in parallel if independent).
-
-Special rule for `@orchestrator`:
-- `@orchestrator` is planning-only.
-- It returns task decomposition, call order, and per-agent prompt guidance.
-- The main session performs actual `runSubagent` calls.
+Use `@orchestrator` only for complex tasks that require multi-step sequencing, dependency ordering, or cross-domain coordination. The main session handles direct 1:1 routing for ordinary delegated tasks.
 
 #### 2.1) Orchestrator-Chained Execution Protocol (Sequential)
 
-**"Multi-step substantive task" definition — ANY of the following qualifies:**
-- Task requires 3+ distinct agent invocations to complete correctly
-- Task spans 3+ domains
-- Task has explicit dependency ordering (step B cannot start before step A completes)
-- Task produces artifacts that require downstream validation (e.g., code → tests → review)
-- Task involves planning a sequence that the agent itself cannot fully determine without orchestration
-- When uncertain whether a task is multi-step, treat it as multi-step and call `@orchestrator`
+For complex tasks, `@orchestrator` produces the execution plan **and creates the TODO list directly** via `manage_todo_list`. Each TODO title follows the format `@agent-name: brief description`. Full per-step prompts are stored in Memory MCP under `step-N-prompt` tags.
 
-For multi-step substantive tasks, use this hand-off pattern:
-1. Call `@orchestrator` first to obtain a concrete execution plan.
-2. Convert plan to an execution queue with: `step_id`, `agent`, `prompt`, `dependencies`, `exit_criteria`.
-3. Execute dependency-linked steps **sequentially** with `runSubagent`.
-4. Run steps in parallel **only** when orchestrator marks them as independent.
-5. After each step, verify exit criteria before continuing.
-6. If a step fails, call `@orchestrator` again with failure context to replan, then resume.
+**Main session execution loop** (after `@orchestrator` returns):
+1. Read the TODO list — each item's title is `@agent-name: task`.
+2. For the current `in-progress` TODO, retrieve the step prompt from Memory MCP (`tags: ["step-N-prompt"]`).
+3. Call `runSubagent(agentName=<agent>, prompt=<retrieved step prompt>)`.
+4. Mark the TODO `completed` immediately after the subagent returns.
+5. Mark the next TODO `in-progress` and repeat from step 2.
+6. If a subagent fails, mark the TODO `failed`, store failure context in Memory MCP, and re-invoke `@orchestrator` for replanning.
 
-Required reporting for chained runs:
-- planned sequence vs executed sequence
-- per-step status (`completed`, `failed`, `replanned`)
-- final integration summary
+**Context window optimization**: Each `runSubagent` call receives only its own step prompt (from Memory MCP), not the full orchestration text. The TODO list replaces free-text plan parsing.
 
 #### 2.2) Mandatory Todo For Multi-Step Resilience
+When `@orchestrator` is used, the TODO list is created by the orchestrator — the main session must NOT recreate it. For direct delegations (no orchestrator), the main session creates TODOs normally.
 
-🔴 **MANDATORY**: For every multi-step substantive task, you must initialize and maintain a todo list via `manage_todo_list`.
-
-Required behavior:
-1. Initialize todo list immediately after execution planning is finalized.
-2. Keep exactly one `in-progress` item at a time and update statuses after each step.
-3. If a step fails, record the failed step in todo state first, then replan.
-4. Before any replanning call, ensure todo state reflects completed, failed, and pending steps.
-5. After replanning, update todo items to preserve continuity instead of restarting from an empty plan.
-
-Failure-continuity rule:
-- Intermediate failure must not reset execution context. The todo list is the canonical state for recovery and resume.
-- If the todo list is missing or stale, refresh it before continuing execution.
+Preserve key findings from each completed step in Memory MCP so downstream agents have context. Detailed todo management belongs to `documents/AGENT_MANUAL.md`.
 
 #### 3) Parallel Delegation
-If subtasks are independent, invoke subagents in **parallel** (simultaneous `runSubagent` calls).
-
-Examples:
-- research + architecture
-- implementation + QA validation
-- documentation writing + code-quality review
-- bug fix + regression test
-- multiple independent file analyses
+If delegated subtasks are independent, they may run in parallel.
 
 #### 4) Delegation-First Workflow
-For every substantive task, follow this order:
+The main session gates and delegates. Agent-specific execution behavior belongs to `AGENTS.md` and each agent definition.
 
-1. **Identify**: Which subagent(s) are suited for this task? (use the table above)
-2. **Decompose**: Break the task into subtasks; assign each to an agent.
-3. **Delegate**: Execute dependency-linked steps sequentially; parallelize only independent groups.
-4. **Integrate**: Combine outputs from all subagents.
-5. **Validate**: Run `@code-quality-reviewer`, `@qa-regression-sentinel`, or `@rubric-verifier` as appropriate.
-6. **Report**: Summarize results and any residual risks.
-
-#### 5) Anti-Skipping Guard
+#### 5) Anti-Skipping Guard (Tier Compliance Enforcement)
 **This guard is a PRE-ACTION gate, not a post-hoc explanation.**
 
-Before generating any substantive response:
-1. Has the Pre-Response Delegation Gate (§ 0-GATE) been executed? If not → execute it NOW.
-2. Did the gate require delegation? If yes and `runSubagent` has not been called → call it NOW.
+Before generating any response or taking any action:
+1. Is this Tier 0 routing/infrastructure? → proceed directly.
+2. Is this Tier 1 interactive gate (commit, security approval, user confirmation)? → proceed directly.
+3. Is this Tier 2 substantive work? → 0-GATE must have fired. If `runSubagent` has not been called → call it NOW. Do not proceed.
 
-If no subagent is invoked for a non-purely-conversational task:
-- **STOP** the response immediately.
-- State the bypass reason using EXACTLY one of the valid tags below.
-- Propose which agent should have been called.
-- Silence, implicit assumption, or proceeding without a tagged reason is a **protocol failure**.
+If no subagent is invoked for a Tier 2 task, **STOP immediately** and state exactly one bypass tag below. Any other reason is a protocol failure.
 
 **Valid bypass reason tags (one must be stated explicitly):**
 - `[TOOL_UNAVAILABLE]` — `runSubagent` tool is disabled or all agents are blocked.
-- `[USER_OVERRIDE]` — User explicitly instructed a direct response (quote the exact instruction).
-- `[GATE_PASSED]` — Task passed all 6 gate conditions (state which G1–G6 answers were all NO).
+- `[USER_OVERRIDE]` — User explicitly instructed a direct response for Tier 2 work (quote the exact instruction).
+- `[GATE_PASSED]` — Tier 0 routing confirmed this is **not** Tier 2 work; Tier 0 carveout conditions verified.
+- `[DELEGATION FAILED]` — `runSubagent` was called but the target agent could not complete after retry. Present failure context to user.
 
-Any other reason is not valid. If none of these apply, delegation is mandatory.
+**❌ FORBIDDEN rationalization patterns — none of these override delegation:**
+- "The user already has the file open, so I can handle it directly."
+- "I can see exactly what needs to change, so I'll do it myself."
+- "It seems faster / simpler to do it inline."
+- "ALL YES so delegation is required, BUT context suggests I can proceed directly."
+- Any reasoning that acknowledges the gate fired and then proceeds without a bypass tag.
 
-#### 6) Output Requirements
-When subagents are used, the final response **MUST** include:
+The instant you find yourself writing a "but" after observing YES on any gate criterion — stop. Call the subagent.
 
-1. Which agent(s) were called
-2. Why each agent was selected
-3. Key findings from each agent
-4. How results were integrated
-5. What was verified (tests/checks) and residual risks
+If a delegated call returns malformed or partial output, retry once with a clarified prompt before surfacing `[DELEGATION FAILED]` or `[PARTIAL RESULT]`.
 
-#### 7) Delegation Examples (Few-Shot Reference)
+#### 6) Delegation Examples (Few-Shot Reference)
 Use these examples as behavioral anchors. The ✅ pattern must be followed; the ❌ pattern is a protocol violation.
-
-**Example A — Feature Implementation**
-```
-User: "Implement the login API endpoint."
-
-❌ WRONG: [Agent starts writing code immediately]
-
-✅ CORRECT:
-  [0-GATE] G1=YES(code is being written) → Delegate
-  [@orchestrator] called → plan: architect → code-generator → code-quality-reviewer
-  [@architect] API design
-  [@code-generator] implementation
-  [@code-quality-reviewer] validation
-```
-
-**Example B — Code Explanation**
-```
-User: "Explain how this function works."
-
-❌ WRONG: "This is purely conversational, so I'll explain directly" → answers without reading code
-
-✅ CORRECT:
-  [0-GATE] G1=YES(codebase exploration required), G3=YES(file reading) → Delegate
-  [search_subagent] called → analyzes function behavior, then explains
-```
 
 **Example C — Genuine Direct Answer**
 ```
 User: "What does the 'feat' commit type mean?"
 
-[0-GATE] G1=NO, G2=NO(1 sentence), G3=NO, G4=NO, G5=NO, G6=NO → ALL NO
+[0-GATE] G1=NO, G2=NO(1 sentence), G3=NO → ALL NO
 [GATE_PASSED] → direct answer: "It is a commit type indicating the addition of a new feature."
 ```
 
@@ -386,8 +290,23 @@ User: "Which file should I put this feature in?"
 ❌ WRONG: "This is just simple advice, so I'll answer directly."
 
 ✅ CORRECT:
-  [0-GATE] G4=YES(architecture domain) → Delegate
+   [0-GATE] G3=YES(tool-based verification improves correctness) → Delegate
   [@architect] called → structural placement recommendation
+```
+
+**Example E — Gate Fired, Rationalization Bypass (FORBIDDEN)**
+```
+User: "Add agent assignment to each step in orchestrator.agent.md."
+
+❌ WRONG:
+  [0-GATE] G1=YES, G2=YES, G3=YES → ALL YES, delegation required.
+  "But the user has the file open and the change is clear, so I'll proceed directly."
+  [agent edits file inline without calling runSubagent]
+
+✅ CORRECT:
+  [0-GATE] G1=YES → Delegate
+  [@code-generator] called with file path and change spec → returns patch
+  Main session applies result.
 ```
 
 ### Mandatory Research Phase

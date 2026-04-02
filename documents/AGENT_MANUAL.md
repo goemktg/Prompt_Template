@@ -73,9 +73,9 @@
 - `run_in_terminal`: 명령 실행
 - `runSubagent`: 전문 에이전트 호출
 
-### 2.4 복잡한 터미널 명령 실행 규칙 (필수)
+### 2.4 복잡한 코드 실행 규칙 (필수) — Pylance MCP 사용
 
-터미널 명령이 필요하더라도, 복잡한 로직은 쉘 체인 대신 **인라인 Python 스크립트**로 실행합니다.
+복잡한 로직이 필요하면, **Pylance MCP의 `mcp_pylance_mcp_s_pylanceRunCodeSnippet` 도구**를 사용합니다. 이는 쉘 체인이나 인라인 Python 스크립트보다 더 깔끔하고 워크스페이스-통합적입니다.
 
 복잡한 명령 기준:
 
@@ -84,30 +84,34 @@
 - 쉘 루프/조건문 필요
 - 인자 이스케이프 오류 위험이 큰 동적 명령
 
-권장 패턴:
+권장 패턴 (Pylance MCP):
 
-```bash
-python3 - <<'PY'
+```python
+# mcp_pylance_mcp_s_pylanceRunCodeSnippet 도구 호출:
 import subprocess
 
 commands = [
-   ["git", "status", "--short"],
-   ["git", "diff", "--name-only"],
+    ["git", "status", "--short"],
+    ["git", "diff", "--name-only"],
 ]
 
 for cmd in commands:
-   print("$", " ".join(cmd))
-   completed = subprocess.run(cmd, check=True, text=True, capture_output=True)
-   if completed.stdout:
-      print(completed.stdout.strip())
-PY
+    print("$", " ".join(cmd))
+    completed = subprocess.run(cmd, check=True, text=True, capture_output=True)
+    if completed.stdout:
+        print(completed.stdout.strip())
 ```
 
 원칙:
 
+- **Pylance MCP 우선**: 복잡한 코드 실행은 항상 `mcp_pylance_mcp_s_pylanceRunCodeSnippet` 사용
 - `subprocess.run([...])` 배열 인자를 기본 사용 (`shell=True` 지양)
 - 결과는 체크포인트 형태로 간단히 출력
 - 2회 이상 재사용되는 로직은 `scripts/`로 승격
+- MCP 도구 호출 시 필수 매개변수:
+  - `codeSnippet`: 실행할 Python 코드
+  - `workspaceRoot`: 워크스페이스 루트 경로 (보통 `file:///Users/kimtaegon/workplace/0_active_projects/Visual_Studio_Code/Prompt_Template`)
+  - `workingDirectory`: 선택사항, 코드 실행 경로 (기본값: 워크스페이스 루트)
 
 ---
 
@@ -167,14 +171,36 @@ PY
 
 단계 정의 전에 `.github/copilot-instructions.md § 0-GATE`를 실행하여 위임 에이전트를 먼저 결정합니다:
 
+- **단순 위임**: 1:1로 매핑되는 작업은 `AGENTS.md`를 참고하여 메인 세션이 직접 적절한 에이전트에 위임합니다.
+- **복잡 위임**: 3개 이상 에이전트 호출, 명시적 의존성, 교차 도메인 산출물이 필요한 경우에만 `@orchestrator`를 먼저 호출합니다.
+- **오케스트레이터 역할**: 오케스트레이터는 범용 라우터가 아니라 순서/의존성 계획자입니다. 에이전트 카탈로그 자체를 대체하지 않습니다.
+
+**오케스트레이터 사용 시 TODO 처리 (중요)**:
+- `@orchestrator` 가 반환되면 TODO 리스트는 **오케스트레이터가 이미 생성**한 상태입니다.
+- 각 TODO 제목은 `@agent-name: 간략한 작업 설명` 형식입니다.
+- 메인 세션은 **TODO를 중복 생성하지 않습니다**. 오케스트레이터가 만든 리스트를 그대로 실행합니다.
+- 각 TODO에서 `@agent-name` 을 추출하고, Memory MCP에서 `step-N-prompt` 태그로 해당 단계의 상세 프롬프트를 조회한 뒤 `runSubagent` 를 호출합니다.
+
+**직접 위임 시 TODO 예시** (오케스트레이터 미사용):
+
 ```python
 manage_todo_list(todoList=[
-    {"id": 1, "title": "Research phase", "status": "in-progress"},
-    {"id": 2, "title": "Implementation", "status": "not-started"},
-    {"id": 3, "title": "Validation", "status": "not-started"},
-    {"id": 4, "title": "Documentation", "status": "not-started"}
+    {"id": 1, "title": "@fixer: Fix authentication timeout", "status": "in-progress"},
+    {"id": 2, "title": "@qa-regression-sentinel: Run regression tests", "status": "not-started"},
+    {"id": 3, "title": "@validator: Final verification", "status": "not-started"},
 ])
 ```
+
+#### Step 2A: 다단계 작업의 컨텍스트 유지
+
+복잡한 다단계 작업에서는 TODO 상태만 남기고 핵심 의미를 버리면 컨텍스트 단편화가 발생합니다.
+
+원칙:
+
+- TODO에는 `completed` / `failed` 같은 상태뿐 아니라 **다음 단계에 필요한 핵심 발견 사항**도 함께 남깁니다.
+- 이전 단계의 아키텍처 결정, 제약사항, 실패 원인, 검증 결과는 다음 단계에서 재사용할 수 있도록 짧게 요약합니다.
+- TODO가 상태 추적용으로만 쓰이고 의미 요약이 전혀 없다면, 별도의 실행 노트나 Memory MCP에 핵심 컨텍스트를 함께 보존합니다.
+- 재계획 전에 현재 TODO가 완료 상태와 핵심 발견 사항을 모두 반영하는지 먼저 확인합니다.
 
 #### Step 3: 구현
 

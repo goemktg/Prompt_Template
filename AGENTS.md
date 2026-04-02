@@ -171,11 +171,28 @@ description: 'Description of the skill and when it should be loaded.'
 2. Add frontmatter with `agent`, `tools`, and `description`
 3. Write the prompt template with clear instructions
 
+## Skill Routing
+
+This section is the single source of truth for skill-to-execution mapping. The main prompt should detect that a skill applies, then consult this section instead of embedding the full routing table inline.
+
+| Skill | Trigger Keywords | Execution Mode | Reason |
+| :--- | :--- | :--- | :--- |
+| `commit-skill` | commit, save changes with git | **Main agent direct (Tier 1)** | Interactive protocol requires user confirmation between steps; subagent cannot pause for I/O |
+| `documentation` | write doc, create report, publish | **Delegate → `@doc-writer` (Tier 2)** | Substantive work; specialist subagent produces higher quality output |
+| `code-review` | review changes, review before merge | **Delegate → `@code-quality-reviewer` (Tier 2)** | Substantive work; dedicated review subagent |
+| `deep-research` | research, investigate (multi-source) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude` (Tier 2)** | Substantive work; multi-source research subagents |
+| `data-analysis` | analyze results, compare metrics | **Delegate → `search_subagent` (built-in) + main agent (Tier 2)** | Substantive work; exploration + synthesis pattern |
+| `skill-extension` | create new skill, new SKILL.md | **Delegate → `@code-generator` (Tier 2)** | Substantive work; structured file generation |
+| `external-skill-generation` | import external skill | **Tier 1 gate + Tier 2 delegation** | Security review gates (steps 1, 3, 6) run in main session (Tier 1). Substantive extraction and rewrite (steps 2, 4, 5) delegate to `@code-generator` via `runSubagent`. Main session holds approval authority between phases. |
+| `paper-catalog-update` | update prompt paper catalog, run catalog update procedure, improve catalog update procedure | **Delegate → `@prompt-plan-master` (Tier 2)** | Substantive work; maintains the paper catalog and supports prompt planning from curated papers |
+| `copilot-eval-benchmark` | benchmark copilot, score customized copilot, swe-bench verified import | **Main agent direct (Tier 1/2 hybrid)** | Local Copilot stack cannot be fully headless; use semi-automated run-sheet + scoring pipeline |
+| **Prompt planning (direct agent)** | design prompt, plan prompt, 프롬프트 설계, 프롬프트 전략 | **Delegate → `@prompt-plan-master` (Tier 2)** | Research-grounded prompt planning; returns prompt drafts/rationale for downstream writers |
+
 ## Available Agents
 
 Use this table to identify which agent to call for each task type. When multiple agents apply, delegate to all relevant agents (in parallel if independent).
 
-> **Pre-selection**: Before consulting this table, run the Pre-Response Delegation Gate (§ 0-GATE in `.github/copilot-instructions.md`). If any gate condition is YES, you MUST call at least one agent from this table.
+> **Pre-selection**: Read the gate result from `.github/copilot-instructions.md § 0-GATE` first, then use this table to choose the agent. Use `@orchestrator` only for complex multi-step work; do not use it as a universal router.
 
 | Task Type | Agent | Description | Example Triggers |
 | :--- | :--- | :--- | :--- |
@@ -202,7 +219,7 @@ Use this table to identify which agent to call for each task type. When multiple
 | **Research lineage / citation** | `@citation-tracer` | Builds research lineage via DFS citation chaining. Identifies foundational papers. | "find foundational papers for", "citation chain for" |
 | **Pattern extraction from history** | `@experience-curator` | Learns from project history. Extracts reusable patterns from logs, failures, and reviews. | "what did we learn?", "extract patterns from" |
 | **Codebase exploration / Q&A** | `search_subagent` (built-in) | VS Code built-in codebase exploration tool. Fast read-only search and Q&A. Not a custom agent file. | "where is X defined?", "how does Y work?", "find files matching" |
-| **Research-backed prompt engineering** | `@prompt-master` | Generates and optimizes prompts using 100+ peer-reviewed papers (CoT, APO, meta-prompting, ReAct, etc.). Updates paper DB monthly. | "write a prompt for", "optimize this prompt", "which prompting technique", "select prompt technique", "update prompt paper catalog", "run catalog update procedure", "improve catalog update procedure", "prompt for agent" |
+| **Research-backed prompt planning** | `@prompt-plan-master` | Generates prompt drafts from the internal paper database and returns planning rationale/citations. It does not author final documents; `@doc-writer` consumes its output to write docs. | "write a prompt for", "which prompting technique", "select prompt technique", "prompt planning", "prompt blueprint", "프롬프트 설계", "프롬프트 전략", "prompt for agent", "prompt template" |
 
 ## Available Skills
 
@@ -213,9 +230,10 @@ Use this table to identify which agent to call for each task type. When multiple
 | `deep-research` | Recursive research workflow (STORM-style) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude`** |
 | `data-analysis` | Result visualization and statistical comparison | **Delegate → `search_subagent` (built-in) + main agent** |
 | `skill-extension` | Create and extend agent skills | **Delegate → `@code-generator`** |
-| `paper-catalog-update` | Monthly update workflow for prompt engineering paper catalog (freshness check, scoring, add/retire, metadata sync) | **Delegate → `@prompt-master`** |
-| `external-skill-generation` | Generate skills from external documentation | **Main agent direct** (security gates) |
+| `paper-catalog-update` | Monthly update workflow for prompt engineering paper catalog (freshness check, scoring, add/retire, metadata sync) | **Delegate → `@prompt-plan-master`** |
+| `external-skill-generation` | Generate skills from external documentation | **Tier 1 gate + Tier 2 delegation** (`@code-generator` for extraction/rewrite phases) |
 | `commit-skill` | Commit workflow with diff-based message generation and explicit user confirmation gate before `git commit` | **Main agent direct** (interactive gate) |
+| `copilot-eval-benchmark` | Semi-automated scoring workflow for customized local Copilot, including optional SWE-bench Verified task import | **Main agent direct** |
 
 ## Adding Custom Agents
 

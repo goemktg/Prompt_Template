@@ -1,9 +1,9 @@
 # Prompt Engineering Papers: Master Index
 
 > **Last Updated**: 2026-03-29
-> **Policy**: Each category targets **100 papers**. The `@prompt-master` agent auto-updates
+> **Policy**: Each category targets **100 papers**. The `@prompt-plan-master` agent auto-updates
 > category files monthly — retiring the lowest-scoring entries when a category exceeds 100.
-> **Curator**: `@prompt-master` agent — run on first invocation after 30-day deadline.
+> **Curator**: `@prompt-plan-master` agent — run on first invocation after 30-day deadline.
 
 ---
 
