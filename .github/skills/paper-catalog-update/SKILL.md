@@ -16,7 +16,7 @@ Use this skill when updating the prompt engineering paper catalog in:
 Typical triggers:
 - `(today - Last_Updated) > 30 days`
 - User explicitly asks for paper DB/catalog update
-- Prompt-plan-master is invoked and database freshness must be checked
+- Master-prompt-writer is invoked and database freshness must be checked
 
 ## Responsibility
 

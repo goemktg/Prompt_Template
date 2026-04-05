@@ -58,6 +58,110 @@ Memory MCP (`mcp_memory_*`) is the authoritative repository for all curated know
 
 ---
 
+## Paper Catalog Coupling
+
+`@experience-curator` is the **designated indexer** for the paper catalog → Memory MCP pipeline. This agent transforms the markdown paper catalog into semantically searchable Memory MCP entries consumed by `@master-prompt-writer` and `@citation-tracer`.
+
+### Indexing Triggers
+
+| Trigger | Condition | Action |
+|---------|-----------|--------|
+| **First-run bootstrap** | `mcp_memory_search(tags=["paper-catalog"])` returns 0 results | Full index of all papers from `documents/reference/papers/categories/*.md` |
+| **Post-catalog-update** | `paper-catalog-update` skill completes | Incremental reindex of modified category files |
+| **Pattern extraction** | Extracted pattern references a paper not yet indexed | Index the specific paper + update pattern with link |
+| **Explicit request** | User or orchestrator explicitly requests reindex | Full or partial reindex as specified |
+
+### Entry Construction Format
+
+Each paper catalog entry is stored as a single Memory MCP entry:
+
+**Content string format**:
+```text
+[{CATEGORY}] {title} | {authors} | {year} | {arxiv_id} | Score: {score} | {key_takeaway}
+```
+
+**Tag taxonomy**:
+```text
+tags: [
+  "paper-catalog",
+  "cat-{category}",     // e.g., cat-reasoning, cat-agent, cat-code
+  "score-{tier}",       // score-core (≥80), score-important (60–79), score-supplementary (40–59)
+  "p3-rag-pipeline"
+]
+```
+
+**Category values**: `cat-reasoning`, `cat-agent`, `cat-survey`, `cat-auto-opt`, `cat-structure`, `cat-code`, `cat-few-shot`, `cat-rag`, `cat-safety`, `cat-compression`, `cat-multimodal`, `cat-role`
+
+**Score tier mapping**:
+| Tier | Score Range |
+|------|-------------|
+| `score-core` | ≥80 |
+| `score-important` | 60–79 |
+| `score-supplementary` | 40–59 |
+
+### Memory MCP Store Example
+
+```text
+mcp_memory_store({
+  content: "[reasoning] Chain-of-Thought Prompting Elicits Reasoning in Large Language Models | Wei et al. | 2022 | arXiv:2201.11903 | Score: 95 | Foundational CoT technique showing step-by-step reasoning improves accuracy",
+  tags: ["paper-catalog", "cat-reasoning", "score-core", "p3-rag-pipeline"],
+  memory_type: "paper-index"
+})
+```
+
+### Pattern-Paper Linkage
+
+When a curated pattern references supporting research, include the linkage in the pattern content:
+
+**Pattern content format**:
+```text
+[Pattern content...]
+
+SUPPORTING_PAPERS: arXiv:2201.11903, arXiv:2203.11171
+```
+
+**Additional tag**: Add `paper-linked` to the pattern's tag list:
+```text
+tags: ["pattern:best-practice", "domain:reasoning", "confidence:high", "paper-linked"]
+```
+
+### Freshness Rules
+
+| Condition | Action |
+|-----------|--------|
+| Master index `Last Updated` > last `paper-index-run` timestamp | Trigger incremental reindex |
+| 30+ days since last full reindex | Trigger full reindex |
+| Category file modified (detected via git or timestamp) | Reindex that category only |
+
+### Run Marker Storage
+
+After completing a reindex operation, store a run marker in Memory MCP:
+
+```text
+mcp_memory_store({
+  content: "Paper catalog index run completed: {timestamp} | Papers indexed: {count} | Categories: {list}",
+  tags: ["paper-index-run", "p3-rag-pipeline"],
+  memory_type: "index-marker",
+  metadata: {
+    run_type: "full" | "incremental",
+    papers_indexed: {count},
+    categories_processed: [{list}],
+    timestamp: "{ISO8601}"
+  }
+})
+```
+
+Query for last run marker:
+```text
+mcp_memory_search(
+  query="paper catalog index run",
+  tags=["paper-index-run"],
+  limit=1
+)
+```
+
+---
+
 ## Inputs & Outputs
 
 ### Inputs

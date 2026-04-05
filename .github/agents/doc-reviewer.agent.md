@@ -202,21 +202,10 @@ For each section:
 **Action if issues found**:
 - ✅ **No issues**: Proceed to Phase 4 (Completeness)
 - ❌ **Issues found**: 
-  1. Document all issues in structured list
-  2. **Invoke `@doc-writer` with fix request**:
-     ```
-     Context: You created [file.md] in previous turn
-     Problems found: [detailed issue list from VS Code Problems]
-     
-     TASK: Fix all markdown linting issues in [file.md]
-     1. Address each issue from the Problems list
-     2. Verify fix by saving file and confirming Problems panel shows 0 issues
-     3. Return updated [file.md] for re-review
-     
-     Do not proceed with other changes.
-     ```
-  3. **Re-verify**: After doc-writer fixes, re-run Problems scan
-  4. **Repeat until clean**: If new issues appear, call doc-writer again
+  1. Document ALL issues in structured list format (see Output Template)
+  2. **Return issues to caller** — do NOT invoke `@doc-writer`
+  3. Caller (doc-writer or skill driver) owns fix responsibility and re-invocation
+  4. Wait for re-review request with updated files
   5. Only continue to Phase 4 when Problems shows 0 issues for the file
 
 **Audience Alignment:**
@@ -455,49 +444,42 @@ _None_ ✅
 
 ---
 
-## Review-and-Fix Loop (CRITICAL WORKFLOW)
+## Single-Driver Review Model (CRITICAL)
 
-**Purpose**: Ensure documentation quality by iterating with `@doc-writer` until all issues are resolved.
+**Purpose**: Prevent nested subagent spawning by enforcing single-driver ownership.
 
-**Loop Workflow**:
+**CONSTRAINT**: `@doc-reviewer` is review-only. It **MUST NOT** invoke `@doc-writer` or any other agent to fix issues. All fix responsibility belongs to the caller.
 
-### Iteration N: Review Complete
+**Workflow**:
+
+### Review Pass
 
 1. **Scan with VS Code Problems** (Phase 3-B)
    - Open markdown file in VS Code
    - Run Problems scan (`Ctrl+Shift+M` / `Cmd+Shift+M`)
    - Collect all markdown lint issues
 
-2. **If Issues Found** → Move to Iteration N+1
-   - Document ALL issues in structured format
-   - **Call `@doc-writer` with**:
-     ```
-     Files from previous session: [list files]
-     Problems found (from VS Code):
-     | File | Line | Rule | Message | Severity |
-     |------|------|------|---------|----------|
-     | [file] | [line] | [rule] | [message] | [severity] |
-     
-     TASK: Fix ALL issues in [files]
-     1. For each problem above, apply the fix in the file
-     2. Save file in VS Code
-     3. Reopen Problems panel to verify fix
-     4. When ALL issues in VS Code show 0 count, return the fixed file
-     5. Do NOT introduce new issues
-     
-     Timeline: Fix and return within this turn
-     ```
-   - **Wait for doc-writer completion**
-   - Go to Iteration N+1 Step 1 (re-scan)
+2. **If Issues Found**:
+   - Document ALL issues in structured format (see Output Template)
+   - Return verdict (`REJECTED` or `CONDITIONAL`) with full issue list
+   - **Do NOT call `@doc-writer`** — caller owns fix responsibility
+   - Wait for re-review request with corrected files
 
 3. **If No Issues Found** → Continue with Review
    - Proceed to Phase 4 (Completeness check)
    - Complete full review protocol
    - Generate final verdict
 
+### Caller Responsibilities
+
+- `@doc-writer` or skill driver receives issue list
+- Caller fixes issues directly
+- Caller re-invokes `@doc-reviewer` for re-review
+- Max 3 review cycles before escalation
+
 ### Iteration Limits
 
-- **Max iterations**: 3
+- **Max iterations**: 3 (tracked by caller, not reviewer)
 - **If 3 iterations reached with issues remaining**:
   - Document remaining issues in final report
   - Mark verdict as `CONDITIONAL` (issues present but doc-writer iteration limit reached)
@@ -519,40 +501,30 @@ _None_ ✅
 
 ## Agent Interaction Protocol
 
-### Calling `@doc-writer` from Review
+### Reviewer-to-Caller Handoff (No Subagent Invocation)
 
-**Use this format when invoking doc-writer**:
+**RULE**: `@doc-reviewer` **MUST NOT** invoke `@doc-writer` or any other agent.
 
-```
-CONTEXT: Reviewing [files] you created in turn N
-STATUS: Found issues in markdown linting phase
+**Protocol**:
+1. Complete review phases and collect all issues
+2. Return structured issue list to caller (see Output Template)
+3. Include verdict (`APPROVED`, `CONDITIONAL`, or `REJECTED`)
+4. **Stop** — do not attempt fixes or call subagents
 
-PROBLEMS (from VS Code):
-[structured table of issues]
+**Caller Responsibility**:
+- Caller (doc-writer, skill driver, or main session) receives issue list
+- Caller applies fixes directly
+- Caller re-invokes `@doc-reviewer` for subsequent review passes
+- Iteration tracking belongs to caller, not reviewer
 
-ACTION REQUIRED:
-1. Fix each problem
-2. Test in VS Code (Problems panel should show 0 issues)
-3. Return updated files
-4. Do not fix other issues (stay focused on lint problems)
-
-SCOPE: Markdown linting fixes ONLY
-TIMELINE: Complete within this turn
-```
-
-### Calling `@doc-reviewer` from Writer
-
-**When `@doc-writer` completes fixes**:
-
-```
-I've fixed the markdown issues you reported:
-[Summary of fixes applied]
-
-Files updated:
-- [file1.md] - fixed [N] issues
-- [file2.md] - fixed [M] issues
-
-Please re-review with VS Code Problems to confirm all issues resolved.
+**Output for Handoff**:
+```json
+{
+  "run_id": "string",
+  "verdict": "REJECTED | CONDITIONAL | APPROVED",
+  "issues": [...],
+  "next_action": "caller_fix_and_resubmit"
+}
 ```
 
 ---

@@ -3,4 +3,6 @@ __pycache__/
 CONTRIBUTING.md
 references/*
 documents/final/*
+!documents/final/.gitkeep
 documents/drafts/*
+!documents/drafts/.gitkeep

@@ -279,7 +279,7 @@ Used when: User needs comprehensive testing, validation, or QA coverage.
 | `@code-generator` | Write code with best practices | "Generate user model with validation" |
 | `@doc-writer` | Create documentation | "Write API endpoint documentation" |
 | `@fixer` | Diagnosis & bug fixing | "Fix null pointer exception in payment handler" |
-| `@prompt-plan-master` | Research-grounded prompt planning & drafting | "Design prompt for agent X", "Which prompting technique for Y" |
+| `@master-prompt-writer` | Research-grounded prompt engineering (direct file authoring) | "Design prompt for agent X", "Which prompting technique for Y" |
 
 ### Category: Quality & Verification
 | Agent | Task | Example |

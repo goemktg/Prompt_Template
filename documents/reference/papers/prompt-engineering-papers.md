@@ -1,15 +1,15 @@
-# Prompt Engineering Papers: Master Index
+# 프롬프트 엔지니어링 논문: 마스터 색인
 
-> **Last Updated**: 2026-03-29
-> **Policy**: Each category targets **100 papers**. The `@prompt-plan-master` agent auto-updates
-> category files monthly — retiring the lowest-scoring entries when a category exceeds 100.
-> **Curator**: `@prompt-plan-master` agent — run on first invocation after 30-day deadline.
+> **최종 업데이트**: 2026-03-29
+> **정책**: 각 카테고리의 목표는 논문 **100편**입니다. `@master-prompt-writer` 에이전트가
+> 카테고리 파일을 월별 자동 업데이트하며, 100편 초과 시 최저 점수 논문부터 퇴출합니다.
+> **관리자**: `@master-prompt-writer` 에이전트 — 30일 기한 이후 첫 실행 시 동작합니다.
 
 ---
 
-## Category Index
+## 카테고리 색인
 
-| # | Category | Tag | File | Current | Target | Last Updated |
+| # | 카테고리 | 태그 | 파일 | 현재 | 목표 | 최종 업데이트 |
 |---|----------|-----|------|---------|--------|-------------|
 | 1 | Surveys & Overviews | `[SURVEY]` | [survey.md](categories/survey.md) | 50 | 100 | 2026-03-29 |
 | 2 | Reasoning & Chain-of-Thought | `[REASONING]` | [reasoning.md](categories/reasoning.md) | 50 | 100 | 2026-03-29 |
@@ -24,41 +24,41 @@
 | 11 | Multimodal Prompting | `[MULTIMODAL]` | [multimodal.md](categories/multimodal.md) | 50 | 100 | 2026-03-29 |
 | 12 | Role & Persona Prompting | `[ROLE]` | [role.md](categories/role.md) | 50 | 100 | 2026-03-29 |
 
-**Total**: 600 / 1,200 papers across all categories
+**총계**: 전체 카테고리 1,200편 중 600편
 
 ---
 
-## Scoring Rubric (All Categories)
+## 점수 기준 (전체 카테고리)
 
-| Field | Range | Description |
+| 필드 | 범위 | 설명 |
 |-------|-------|-------------|
-| **Novelty** | 1–100 | How novel the contribution is relative to existing work |
-| **Impact** | 1–100 | Citation count signal + practical adoption breadth |
+| **Novelty** | 1–100 | 기존 연구 대비 기여의 신규성 |
+| **Impact** | 1–100 | 인용 횟수 + 실질적 채택 범위 |
 | **Score** | 1–100 | `round((Novelty + Impact) / 2)` |
 
-Score thresholds:
+점수 기준:
 
-- **80–100**: Core canon — must keep; reference first in technique selection
-- **60–79**: Important — include for relevant task types
-- **40–59**: Supplementary — niche or incremental value
-- **1–39**: Retirement candidates (retire first when category exceeds 100)
-
----
-
-## Update Procedure
-
-Paper catalog update workflow is managed by the dedicated skill:
-
-- Skill name: `paper-catalog-update`
-- Skill definition file: `.github/skills/paper-catalog-update/SKILL.md`
-
-Use that skill as the single source of truth for stale-check, scoring, add/retire policy, and metadata updates.
+- **80–100**: 핵심 정전 — 반드시 유지; 기법 선택 시 우선 참조
+- **60–79**: 중요 — 관련 작업 유형에 포함
+- **40–59**: 보조 — 틈새 또는 점진적 가치
+- **1–39**: 퇴출 후보 (카테고리 100편 초과 시 우선 퇴출)
 
 ---
 
-## Top Papers Quick Reference (Score ≥ 90)
+## 업데이트 절차
 
-| Category | Title | Score |
+논문 카탈로그 업데이트 워크플로우는 전용 스킬로 관리됩니다:
+
+- 스킬 이름: `paper-catalog-update`
+- 스킬 정의 파일: `.github/skills/paper-catalog-update/SKILL.md`
+
+최신 여부 확인, 점수 산정, 추가/퇴출 정책, 메타데이터 업데이트의 단일 정보 소스는 해당 스킬을 사용하세요.
+
+---
+
+## 상위 논문 빠른 참조 (점수 ≥ 90)
+
+| 카테고리 | 제목 | 점수 |
 |----------|-------|-------|
 | `[FEW-SHOT]` | Language Models are Few-Shot Learners (GPT-3) | 99 |
 | `[REASONING]` | Chain-of-Thought Prompting Elicits Reasoning in LLMs | 99 |

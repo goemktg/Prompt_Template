@@ -184,9 +184,18 @@ This section is the single source of truth for skill-to-execution mapping. The m
 | `data-analysis` | analyze results, compare metrics | **Delegate → `search_subagent` (built-in) + main agent (Tier 2)** | Substantive work; exploration + synthesis pattern |
 | `skill-extension` | create new skill, new SKILL.md | **Delegate → `@code-generator` (Tier 2)** | Substantive work; structured file generation |
 | `external-skill-generation` | import external skill | **Tier 1 gate + Tier 2 delegation** | Security review gates (steps 1, 3, 6) run in main session (Tier 1). Substantive extraction and rewrite (steps 2, 4, 5) delegate to `@code-generator` via `runSubagent`. Main session holds approval authority between phases. |
-| `paper-catalog-update` | update prompt paper catalog, run catalog update procedure, improve catalog update procedure | **Delegate → `@prompt-plan-master` (Tier 2)** | Substantive work; maintains the paper catalog and supports prompt planning from curated papers |
+| `paper-catalog-update` | update prompt paper catalog, run catalog update procedure, improve catalog update procedure | **Delegate → `@master-prompt-writer` (Tier 2)** | Substantive work; maintains the paper catalog and supports prompt planning from curated papers |
 | `copilot-eval-benchmark` | benchmark copilot, score customized copilot, swe-bench verified import | **Main agent direct (Tier 1/2 hybrid)** | Local Copilot stack cannot be fully headless; use semi-automated run-sheet + scoring pipeline |
-| **Prompt planning (direct agent)** | design prompt, plan prompt, 프롬프트 설계, 프롬프트 전략 | **Delegate → `@prompt-plan-master` (Tier 2)** | Research-grounded prompt planning; returns prompt drafts/rationale for downstream writers |
+| **Prompt planning (direct agent)** | design prompt, plan prompt, 프롬프트 설계, 프롬프트 전략 | **Delegate → `@master-prompt-writer` (Tier 2)** | Research-grounded prompt engineering; always directly authors prompt assets (no plan-only mode) |
+| **Prompt analysis / technique report** | analyze prompt, prompt technique report, prompt paper analysis, 프롬프트 기법 분석 | **Delegate → `@master-prompt-writer` (Tier 2), then `@doc-writer` for `documents/` finalization** | Domain expertise required; 2-step handoff: @master-prompt-writer produces content, @doc-writer formats and publishes to `documents/` |
+
+### Prompt-Analysis Routing Clarification
+
+> **Prompt-analysis, prompt-technique, and prompt-paper deliverables are NOT ordinary documentation routing.**
+>
+> - **First**: `@master-prompt-writer` produces the analytical content (technique evaluation, paper-backed analysis, evidence-based recommendations).
+> - **Then**: If the final artifact must be a publication document under `documents/`, `@doc-writer` takes the fact sheet and applies formatting, Korean prose, and template compliance.
+> - **Rationale**: `@doc-writer` lacks prompt-paper domain expertise; `@master-prompt-writer` lacks `documents/` publication authority.
 
 ## Available Agents
 
@@ -202,7 +211,7 @@ Use this table to identify which agent to call for each task type. When multiple
 | **Architecture / design planning** | `@architect` | Architecture Planner. Designs system architecture and technical solutions. | "design", "how should I structure", "best approach for" |
 | **Code review / quality gate** | `@code-quality-reviewer` | Code Quality Reviewer. Ensures code standards compliance. | "review my code", "is this good?", "check for issues" |
 | **Regression / test reliability** | `@qa-regression-sentinel` | Execution-based quality verification, reproduction scripts, and flaky test detection. | "run tests", "check for regressions", "flaky test" |
-| **Documentation writing** | `@doc-writer` | Documentation Writer. Creates well-structured documentation from requirements. | "write docs", "document this", "create README" |
+| **Documentation writing** | `@doc-writer` | Documentation Writer (documentation only — not prompt assets). **Directly authors and edits** documentation files from requirements. Must write files itself, not return drafts for the main session to apply. Prompt authoring requests must be routed to `@master-prompt-writer`. | "write docs", "document this", "create README" |
 | **Documentation review** | `@doc-reviewer` | Documentation Reviewer. Reviews documentation for clarity and completeness. | "review this doc", "check documentation" |
 | **Theory / concept research** | `@research-gpt` | Theory-focused research (Concepts, Prior Work). | "explain theory behind", "what is X", "prior work on" |
 | **Implementation / API research** | `@research-gemini` | Implementation-focused research (Code, API, Hardware). | "how to implement X with library Y", "API usage for" |
@@ -219,18 +228,18 @@ Use this table to identify which agent to call for each task type. When multiple
 | **Research lineage / citation** | `@citation-tracer` | Builds research lineage via DFS citation chaining. Identifies foundational papers. | "find foundational papers for", "citation chain for" |
 | **Pattern extraction from history** | `@experience-curator` | Learns from project history. Extracts reusable patterns from logs, failures, and reviews. | "what did we learn?", "extract patterns from" |
 | **Codebase exploration / Q&A** | `search_subagent` (built-in) | VS Code built-in codebase exploration tool. Fast read-only search and Q&A. Not a custom agent file. | "where is X defined?", "how does Y work?", "find files matching" |
-| **Research-backed prompt planning** | `@prompt-plan-master` | Generates prompt drafts from the internal paper database and returns planning rationale/citations. It does not author final documents; `@doc-writer` consumes its output to write docs. | "write a prompt for", "which prompting technique", "select prompt technique", "prompt planning", "prompt blueprint", "프롬프트 설계", "프롬프트 전략", "prompt for agent", "prompt template" |
+| **Research-backed prompt engineering** | `@master-prompt-writer` | Designs, creates, and edits prompt assets (agent definitions, skill files, prompt templates) grounded in the internal paper database. Always directly authors files — no plan-only mode. Invokes `@doc-reviewer` for validation before completion. General project docs remain `@doc-writer`'s responsibility. | "write a prompt for", "which prompting technique", "select prompt technique", "prompt planning", "prompt blueprint", "프롬프트 설계", "프롬프트 전략", "prompt for agent", "prompt template" |
 
 ## Available Skills
 
 | Skill | Description | Execution Mode |
 | :--- | :--- | :--- |
-| `documentation` | Standardized documentation creation and formatting | **Delegate → `@doc-writer`** |
+| `documentation` | Standardized documentation creation and formatting (subagent directly writes/edits files) | **Delegate → `@doc-writer`** |
 | `code-review` | Code quality checklist and best practices enforcement | **Delegate → `@code-quality-reviewer`** |
 | `deep-research` | Recursive research workflow (STORM-style) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude`** |
 | `data-analysis` | Result visualization and statistical comparison | **Delegate → `search_subagent` (built-in) + main agent** |
 | `skill-extension` | Create and extend agent skills | **Delegate → `@code-generator`** |
-| `paper-catalog-update` | Monthly update workflow for prompt engineering paper catalog (freshness check, scoring, add/retire, metadata sync) | **Delegate → `@prompt-plan-master`** |
+| `paper-catalog-update` | Monthly update workflow for prompt engineering paper catalog (freshness check, scoring, add/retire, metadata sync) | **Delegate → `@master-prompt-writer`** |
 | `external-skill-generation` | Generate skills from external documentation | **Tier 1 gate + Tier 2 delegation** (`@code-generator` for extraction/rewrite phases) |
 | `commit-skill` | Commit workflow with diff-based message generation and explicit user confirmation gate before `git commit` | **Main agent direct** (interactive gate) |
 | `copilot-eval-benchmark` | Semi-automated scoring workflow for customized local Copilot, including optional SWE-bench Verified task import | **Main agent direct** |

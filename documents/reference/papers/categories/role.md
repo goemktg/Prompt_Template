@@ -1,22 +1,22 @@
-# Prompt Engineering Papers: Role & Persona Prompting
+# 프롬프트 엔지니어링 논문: 역할 및 페르소나 프롬프팅
 
-> **Category**: `[ROLE]`
-> **Last Updated**: 2026-03-29
-> **Target**: 100 papers | **Current Count**: 50
+> **카테고리**: `[ROLE]`
+> **최종 업데이트**: 2026-03-29
+> **목표**: 논문 100편 | **현재 수**: 50
 
 ---
 
-## Scoring Rubric
+## 점수 기준
 
-| Field | Range | Description |
+| 필드 | 범위 | 설명 |
 |-------|-------|-------------|
-| **Novelty** | 1–100 | 80–100: New paradigm · 60–79: Significant extension · 40–59: Incremental · 1–39: Marginal |
-| **Impact** | 1–100 | 80–100: >1000 citations/widely adopted · 60–79: 500–1000 · 40–59: 100–500 · 1–39: <100 |
-| **Score** | 1–100 | `round((Novelty + Impact) / 2)` — used for retire-vs-keep decisions |
+| **Novelty** | 1–100 | 80–100: 새로운 패러다임 · 60–79: 중요한 확장 · 40–59: 점진적 기여 · 1–39: 미미한 기여 |
+| **Impact** | 1–100 | 80–100: 인용 >1,000회 / 광범위 채택 · 60–79: 500–1,000 · 40–59: 100–500 · 1–39: <100 |
+| **Score** | 1–100 | `round((Novelty + Impact) / 2)` — 보존/퇴출 결정에 사용됨 |
 
 ---
 
-## Papers
+## 논문 목록
 
 | # | Title | Authors | Year | ID | Novelty | Impact | Score | Key Takeaway |
 |---|-------|---------|------|----|---------|--------|-------|--------------|
@@ -73,9 +73,9 @@
 
 ---
 
-## Papers to Add (Priority Queue for Next Update)
+## 추가 예정 논문 (다음 업데이트 우선순위 대기열)
 
-Search targets:
+검색 대상:
 - "Persona Hub" large-scale persona generation dataset (2024-2025)
 - "Character consistency" over long contexts papers
 - "Roleplay safety" — jailbreak via persona papers
