@@ -201,7 +201,9 @@ This section is the single source of truth for skill-to-execution mapping. The m
 
 Use this table to identify which agent to call for each task type. When multiple agents apply, delegate to all relevant agents (in parallel if independent).
 
-> **Pre-selection**: Read the gate result from `.github/copilot-instructions.md § 0-GATE` first, then use this table to choose the agent. Use `@orchestrator` only for complex multi-step work; do not use it as a universal router.
+> **Pre-selection**: Read the gate result from `.github/copilot-instructions.md § 0-INTENT` and `§ 0-GATE` first, then use this table to choose the agent. Use `@orchestrator` only for complex multi-step work; do not use it as a universal router.
+>
+> **Domain Priority Reminder**: Prompt assets (`@master-prompt-writer`) > General docs (`@doc-writer`) > Code review (`@code-quality-reviewer`). The word "review" alone does NOT default to code-review — check artifact type.
 
 | Task Type | Agent | Description | Example Triggers |
 | :--- | :--- | :--- | :--- |
@@ -209,7 +211,7 @@ Use this table to identify which agent to call for each task type. When multiple
 | **New code / feature implementation** | `@code-generator` | Code generation with best practices and type safety. | "implement X", "add feature Y", "write a function for Z" |
 | **Bug / error / failure diagnosis & fix** | `@fixer` | Autonomous problem-solving & execution agent. Diagnoses issues, implements fixes, executes code/tests, and verifies solutions. | "fix this", "error in", "not working", "debug" |
 | **Architecture / design planning** | `@architect` | Architecture Planner. Designs system architecture and technical solutions. | "design", "how should I structure", "best approach for" |
-| **Code review / quality gate** | `@code-quality-reviewer` | Code Quality Reviewer. Ensures code standards compliance. | "review my code", "is this good?", "check for issues" |
+| **Code review / quality gate** | `@code-quality-reviewer` | Code Quality Reviewer. Reviews **source code files only** (`.py`, `.ts`, `.js`, `.java`, `.c`, `.cpp`, etc.) for bugs, style, and standards compliance. Does NOT review documentation, prompt assets, or markdown files. | "review my code", "check this function", "PR code review", "is this code correct?", "code quality check" |
 | **Regression / test reliability** | `@qa-regression-sentinel` | Execution-based quality verification, reproduction scripts, and flaky test detection. | "run tests", "check for regressions", "flaky test" |
 | **Documentation writing** | `@doc-writer` | Documentation Writer (documentation only — not prompt assets). **Directly authors and edits** documentation files from requirements. Must write files itself, not return drafts for the main session to apply. Prompt authoring requests must be routed to `@master-prompt-writer`. | "write docs", "document this", "create README" |
 | **Documentation review** | `@doc-reviewer` | Documentation Reviewer. Reviews documentation for clarity and completeness. | "review this doc", "check documentation" |
@@ -228,7 +230,7 @@ Use this table to identify which agent to call for each task type. When multiple
 | **Research lineage / citation** | `@citation-tracer` | Builds research lineage via DFS citation chaining. Identifies foundational papers. | "find foundational papers for", "citation chain for" |
 | **Pattern extraction from history** | `@experience-curator` | Learns from project history. Extracts reusable patterns from logs, failures, and reviews. | "what did we learn?", "extract patterns from" |
 | **Codebase exploration / Q&A** | `search_subagent` (built-in) | VS Code built-in codebase exploration tool. Fast read-only search and Q&A. Not a custom agent file. | "where is X defined?", "how does Y work?", "find files matching" |
-| **Research-backed prompt engineering** | `@master-prompt-writer` | Designs, creates, and edits prompt assets (agent definitions, skill files, prompt templates) grounded in the internal paper database. Always directly authors files — no plan-only mode. Invokes `@doc-reviewer` for validation before completion. General project docs remain `@doc-writer`'s responsibility. | "write a prompt for", "which prompting technique", "select prompt technique", "prompt planning", "prompt blueprint", "프롬프트 설계", "프롬프트 전략", "prompt for agent", "prompt template" |
+| **Research-backed prompt engineering** | `@master-prompt-writer` | Designs, creates, edits, and **analyzes** prompt assets (`.agent.md`, `SKILL.md`, `.prompt.md`, `copilot-instructions.md`) grounded in the internal paper database. Also handles **routing policy improvements**, **agent/skill customization**, and **prompt-technique analysis**. Always directly authors files — no plan-only mode. Invokes `@doc-reviewer` for validation before completion. General project docs (not prompt assets) remain `@doc-writer`'s responsibility. | "write a prompt for", "which prompting technique", "select prompt technique", "prompt planning", "prompt blueprint", "프롬프트 설계", "프롬프트 전략", "prompt for agent", "prompt template", **"analyze routing"**, **"improve agent instructions"**, **"fix routing logic"**, **"review prompt asset"**, **"agent definition"**, **"skill file analysis"** |
 
 ## Available Skills
 

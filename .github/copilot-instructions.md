@@ -190,6 +190,49 @@ Check whether the user's request maps to a registered skill in the session's ski
 - When a skill resolves to Tier 2 work, load `SKILL.md`, extract the protocol, and delegate to the mapped agent.
 - When a skill resolves to Tier 0 or Tier 1 work, load `SKILL.md` and execute it directly in the main session.
 
+#### 0-INTENT) Intent Classification Gate
+🟡 **Execute AFTER § 0-SKILL (if no skill matched) and BEFORE § 0-GATE.**
+
+When no registered skill matches but the request is substantive, classify user intent **before** running the delegation gate. This prevents misrouting caused by ambiguous keywords (e.g., "review" could mean code-review, doc-review, or prompt-analysis).
+
+**Domain Priority Rules (Highest → Lowest):**
+
+| Priority | Domain | Key Indicators | Routes to |
+|---|---|---|---|
+| **1** | Prompt / Agent / Skill Assets | `.agent.md`, `SKILL.md`, `.prompt.md`, `copilot-instructions.md`, "prompt", "routing", "agent definition", "skill file" | `@master-prompt-writer` |
+| **2** | Prompt-Analysis / Technique | "prompt technique", "프롬프트 기법", "which prompting method", "paper-based analysis" | `@master-prompt-writer` → `@doc-writer` (if `documents/` publication) |
+| **3** | General Documentation | `documents/`, "write report", "document this", "README" | `@doc-writer` |
+| **4** | Code Review | Explicit **source code** files (`.py`, `.ts`, `.js`, `.java`, etc.), "check my code", "PR review" | `@code-quality-reviewer` |
+
+**Classification Scoring (Quick Heuristic):**
+
+| Dimension | Weight | Check |
+|---|---|---|
+| **Artifact type** | 40% | Does the request name a specific file extension or path pattern from the priority table? |
+| **Action verb** | 30% | "analyze prompt" ≠ "review code"; verb + object pairing matters. |
+| **Domain keywords** | 30% | Count domain-specific terms; highest count wins if artifact type is ambiguous. |
+
+**Routing Confidence Threshold:**
+- **≥70%** → Route directly to the top-priority matching agent.
+- **50-69%** → Route but log `[LOW_CONFIDENCE]` for monitoring.
+- **<50% OR tie between domains** → Trigger disambiguation (template below).
+
+**Disambiguation Template (use when confidence < 50% or domains tie):**
+
+> I want to route your request to the right specialist. Which of these best describes your goal?
+>
+> 1. **Prompt/Agent Asset** — Create, edit, or analyze `.agent.md`, `SKILL.md`, `.prompt.md`, or routing instructions.
+> 2. **Prompt Technique Analysis** — Research-backed analysis of prompting methods for a report.
+> 3. **Project Documentation** — Write or update docs under `documents/`.
+> 4. **Source Code Review** — Quality/bug check on actual code files.
+>
+> Reply with a number or clarify your intent.
+
+**Explicit Non-Overlap Rules:**
+- Requests mentioning **prompt assets, routing policy, agent definitions, or skill customization** are **NEVER** ordinary documentation or code review — always route to `@master-prompt-writer`.
+- The keyword "review" alone does **NOT** imply code-review; check the target artifact type first.
+- If the artifact is a markdown file under `.github/` (agents, prompts, skills, instructions), it is a prompt asset, not general documentation.
+
 #### 0-GATE) Mandatory Pre-Response Delegation Gate
 🔴 **Execute this gate BEFORE generating any response or taking any action.**
 
