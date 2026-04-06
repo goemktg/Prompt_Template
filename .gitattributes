@@ -1,0 +1,10 @@
+# Normalize all text files to LF in the repository.
+# On checkout, Git converts line endings to LF (overrides core.autocrlf / core.eol).
+* text=auto eol=lf
+
+# Windows batch/cmd scripts must stay CRLF
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Shell scripts must stay LF (redundant given the default, but explicit)
+*.sh   text eol=lf
