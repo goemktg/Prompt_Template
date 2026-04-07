@@ -475,6 +475,17 @@ When language rules conflict:
 - Follow framework conventions (e.g., use framework's built-in patterns)
 - Document deviations from standard approaches
 
+### Python Execution Policy
+
+- **All Python code/script execution** must use the Pylance MCP tool `mcp_pylance_mcp_s_pylanceRunCodeSnippet` instead of terminal-based `python ...` commands.
+- **Rationale**:
+  - Uses the correct workspace interpreter and virtual environment automatically
+  - Avoids shell escaping and quoting issues
+  - Provides consistent output and error handling
+  - Better IDE integration (diagnostics, type checking)
+- **Exception**: Shell-native non-Python commands (e.g., `git`, `npm`, `cargo`, `make`) may still use the terminal.
+- **Operational details**: See `documents/AGENT_MANUAL.md` § 2.4 for patterns and parameters.
+
 ### Markdown Standards
 
 - **Markdown Linting**: All written markdown documents must have no markdown linting problems

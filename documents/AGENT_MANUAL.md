@@ -70,19 +70,14 @@
 - `read_file`: 파일 읽기
 - `create_file`: 파일 생성
 - `replace_string_in_file`: 파일 수정
-- `run_in_terminal`: 명령 실행
+- `run_in_terminal`: 명령 실행 (**주의**: Python 코드/스크립트 실행에는 사용하지 않습니다. § 2.4 참조)
 - `runSubagent`: 전문 에이전트 호출
 
-### 2.4 복잡한 코드 실행 규칙 (필수) — Pylance MCP 사용
+### 2.4 Python 코드 실행 규칙 (필수) — Pylance MCP 사용
 
-복잡한 로직이 필요하면, **Pylance MCP의 `mcp_pylance_mcp_s_pylanceRunCodeSnippet` 도구**를 사용합니다. 이는 쉘 체인이나 인라인 Python 스크립트보다 더 깔끔하고 워크스페이스-통합적입니다.
+**모든 Python 코드 및 스크립트 실행**은 `run_in_terminal`의 `python ...` 명령 대신 **Pylance MCP의 `mcp_pylance_mcp_s_pylanceRunCodeSnippet` 도구**를 사용합니다. 워크스페이스 인터프리터와 가상 환경을 자동으로 사용하며, 쉘 이스케이프 문제 없이 일관된 출력 및 에러 처리를 제공합니다.
 
-복잡한 명령 기준:
-
-- `&&`, `||`, `|`, `;` 조합이 3개 이상
-- `awk/sed/xargs` 기반의 다단 변환
-- 쉘 루프/조건문 필요
-- 인자 이스케이프 오류 위험이 큰 동적 명령
+> **예외**: `git`, `npm`, `cargo` 등 쉘 네이티브 비-Python 명령은 `run_in_terminal`을 사용합니다.
 
 권장 패턴 (Pylance MCP):
 
@@ -104,7 +99,7 @@ for cmd in commands:
 
 원칙:
 
-- **Pylance MCP 우선**: 복잡한 코드 실행은 항상 `mcp_pylance_mcp_s_pylanceRunCodeSnippet` 사용
+- **Pylance MCP 우선**: 모든 Python 코드/스크립트 실행은 항상 `mcp_pylance_mcp_s_pylanceRunCodeSnippet` 사용
 - `subprocess.run([...])` 배열 인자를 기본 사용 (`shell=True` 지양)
 - 결과는 체크포인트 형태로 간단히 출력
 - 2회 이상 재사용되는 로직은 `scripts/`로 승격
