@@ -362,6 +362,45 @@ User: "Add agent assignment to each step in orchestrator.agent.md."
 2.  **External Verification**: Use Context7 MCP, ArXiv MCP, or web search
 3.  **Explicit Citation**: Must cite actual papers/documentation/sources
 
+### Large-Change Governance Workflow
+
+🔴 **MANDATORY FOR STRUCTURAL LARGE CHANGES**
+
+When a task meets the large-change threshold, the `large-change-governance` skill workflow must be invoked. This operationalizes the research-first mandate for repository-wide structural changes.
+
+**Threshold Triggers** (any apply):
+
+- Changes spanning 3+ files across 2+ directories
+- Estimated 50+ line modifications
+- Cross-domain changes (code + docs + config)
+- New workflow/policy introductions
+- Public interface or structural reorganization
+
+**Exemptions**:
+
+- Single-file typo or wording fixes
+- Isolated bug fixes in one module
+- Routine table/list updates under 20 lines
+
+**Workflow Phases** (must execute in order):
+
+| Phase | Handler | Gate |
+|-------|---------|------|
+| **RESEARCH** | Domain subagent | Report required in `documents/drafts/` |
+| **CONFIRM** | Main session (Tier 1) | Explicit user approval required |
+| **IMPLEMENT** | Domain subagent(s) | Per approved plan only |
+| **VERIFY** | `@doc-reviewer` + domain reviewer | Validation evidence required |
+
+**Integration with Delegation**:
+
+- Phase 1 and 3 delegate to domain specialists: `@master-prompt-writer` (prompts), `@architect` (code), `@doc-writer` (docs), or `@orchestrator` (multi-domain).
+- Phase 2 is an interactive gate — main session handles.
+- Phase 4 requires reviewer subagent invocation.
+
+**Override**: User may explicitly state "Override large-change governance" to bypass. Log with `[GOVERNANCE OVERRIDE]` tag.
+
+**Skill Reference**: See `.github/skills/large-change-governance/SKILL.md` for full protocol.
+
 ---
 
 ## 1. Language Policy

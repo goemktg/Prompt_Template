@@ -171,6 +171,7 @@ for cmd in commands:
 - **오케스트레이터 역할**: 오케스트레이터는 범용 라우터가 아니라 순서/의존성 계획자입니다. 에이전트 카탈로그 자체를 대체하지 않습니다.
 
 **오케스트레이터 사용 시 TODO 처리 (중요)**:
+
 - `@orchestrator` 가 반환되면 TODO 리스트는 **오케스트레이터가 이미 생성**한 상태입니다.
 - 각 TODO 제목은 `@agent-name: 간략한 작업 설명` 형식입니다.
 - 메인 세션은 **TODO를 중복 생성하지 않습니다**. 오케스트레이터가 만든 리스트를 그대로 실행합니다.
@@ -262,6 +263,50 @@ mcp_memory_store_memory(
     tags=["work", "note", "프로젝트명"]
 )
 ```
+
+### 3.3 대규모 변경 거버넌스 워크플로우 (Large-Change Governance Workflow)
+
+저장소 전반에 걸친 프롬프트 에셋, 소스 코드 아키텍처, 문서 구조 개편 및 교차 도메인 변경 시 적용되는 4단계 운영 절차(SOP)입니다. 정책 상세 및 스킬 정의는 `.github/skills/large-change-governance/SKILL.md`를 참조하세요.
+
+#### 트리거 판단 (Trigger Heuristics)
+
+- **트리거 대상 (Triggers)**:
+  - 2개 이상 디렉토리에 걸친 3개 이상 파일 변경
+  - 50줄 이상의 대규모 코드 변경
+  - 교차 도메인(cross-domain) 작업
+  - 공개 인터페이스(public interface) 또는 API 변경
+  - 새로운 워크플로우/정책 도입 (New workflow/policy introductions)
+  - 구조적 아키텍처 개편 및 문서 전면 재구성 (Structural reorganization)
+  - 사용자가 명시적으로 리서치/계획을 우선 요구한 경우 (User explicitly requests "plan first")
+- **예외 (Non-triggers)**:
+  - 단일 파일 내 오타/단순 문구 개선 (Single-file typo/wording fixes)
+  - 단순 테이블 행 갱신 (Simple table row updates)
+  - 단일 모듈 내의 고립된 버그 픽스 (Isolated bug fixes in one module)
+  - 단일 파일 내 20줄 미만의 소규모 문서 편집 (Documentation edits under 20 lines in a single file)
+  - 기존 패턴을 따르는 일상적인 커밋 사항 (Routine commits following existing patterns)
+*(모호한 경우, 안전을 위해 워크플로우를 트리거하여 리서치 단계를 수행합니다.)*
+
+#### 도메인별 주도 에이전트 (Lead Agents by Domain)
+
+- **프롬프트/정책 에셋**: `@master-prompt-writer`
+- **소스 코드 / 기능 구현**: `@architect` (구조 설계), `@code-generator` (구현), 필요 시 `@fixer`
+- **문서 구조/내용**: `@doc-writer` (`documents/` 하위 문서의 작업은 대규모 변경 절차 중이라도 반드시 `@doc-writer`가 수행하고 `@doc-reviewer`가 검증함)
+- **교차 도메인 / 3+ 에이전트 단계 / 명시적 의존성**: `@orchestrator`
+
+#### 4단계 수행 절차 (4-Phase Execution)
+
+1. **Phase 1. RESEARCH**: 주도 에이전트가 설계/위험도를 분석하여 `documents/drafts/` 에 리서치 보고서를 작성.
+2. **Phase 2. CONFIRM**: **메인 세션(Main session)이 담당**. 보고서 경로를 노출하고 명시적 사용자 승인(Explicit Approval)을 요청. (계획 반려 시 최대 3회까지 Phase 1 반복 수정 루프 수행)
+3. **Phase 3. IMPLEMENT**: 승인된 내용에 따라 도메인별 에이전트들이 실제 파일을 수정.
+4. **Phase 4. VERIFY**: 변경 사항을 린팅 및 실행 테스트 한 후 원본 리서치 보고서를 최종 상태로 갱신 (문서는 `@doc-reviewer` 활용).
+
+#### 예외 상황 및 엣지 케이스 (Edge Cases)
+
+- **사용자 수정 요청 (User-requested revisions)**: Phase 2에서 계획이 반려되면 Phase 1으로 복귀해 보고서를 갱신한 후 재승인을 요청.
+- **부분 실패 (Partial failure during implementation)**: Phase 3 구현 중 치명적 실패 발생 시 전체 롤백 기점(checkpoint)을 확인하고 Phase 2로 돌아가 새로운 지시 대기.
+- **모호한 트리거 (Ambiguous trigger threshold)**: 프로젝트 영향이 확신이 서지 않을 땐 리스크 예방을 위해 무조건 워크플로우를 트리거.
+- **긴급 우회 (Emergency override)**: 긴급한 버그 픽스로 사용자가 명시적 우회를 지시한 경우 우선 절차를 생략하고 즉결 처리 가능 (반드시 완료 후 `[EMERGENCY OVERRIDE]` 태그 기록 및 Memory MCP 저장 필수).
+- **세션 종료 (Session timeout)**: Phase 2 사용자 대기 중 응답 없이 세션이 종료될 시, 진행 상태를 Memory MCP에 기록하여 보존.
 
 ---
 
@@ -563,4 +608,4 @@ mcp_memory_store_memory(
 
 ---
 
-**최종 업데이트**: 2026-02-23
+**최종 업데이트**: 2026-04-09

@@ -177,6 +177,7 @@ This section is the single source of truth for skill-to-execution mapping. The m
 
 | Skill | Trigger Keywords | Execution Mode | Reason |
 | :--- | :--- | :--- | :--- |
+| `large-change-governance` | large change, major refactor, cross-domain change, multi-file restructure, architectural overhaul, introduce new workflow | **Tier 1 gate + Tier 2 delegation** | 4-phase process: Phase 1 (RESEARCH) and Phase 3 (IMPLEMENT) delegate to domain agents (`@master-prompt-writer`, `@architect`, `@code-generator`, `@doc-writer`, `@orchestrator`). Phase 2 (CONFIRM) runs in main session as Tier 1 interactive gate. Phase 4 (VERIFY) invokes reviewers. |
 | `commit-skill` | commit, save changes with git | **Main agent direct (Tier 1)** | Interactive protocol requires user confirmation between steps; subagent cannot pause for I/O |
 | `documentation` | write doc, create report, publish | **Delegate → `@doc-writer` (Tier 2)** | Substantive work; specialist subagent produces higher quality output |
 | `code-review` | review changes, review before merge | **Delegate → `@code-quality-reviewer` (Tier 2)** | Substantive work; dedicated review subagent |
@@ -236,6 +237,7 @@ Use this table to identify which agent to call for each task type. When multiple
 
 | Skill | Description | Execution Mode |
 | :--- | :--- | :--- |
+| `large-change-governance` | 4-phase governance workflow (RESEARCH → CONFIRM → IMPLEMENT → VERIFY) for repository-wide structural changes spanning multiple files/domains | **Tier 1 gate + Tier 2 delegation** (domain agents for substantive phases) |
 | `documentation` | Standardized documentation creation and formatting (subagent directly writes/edits files) | **Delegate → `@doc-writer`** |
 | `code-review` | Code quality checklist and best practices enforcement | **Delegate → `@code-quality-reviewer`** |
 | `deep-research` | Recursive research workflow (STORM-style) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude`** |
