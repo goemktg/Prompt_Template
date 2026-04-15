@@ -405,16 +405,16 @@ After creating or modifying documentation, you must invoke `@doc-reviewer` to va
    - Phase 1-3: Structure, accuracy, clarity, markdown linting
    - Phase 4-6: Completeness, consistency, links/metadata
    
-   Request: Re-review with VS Code Problems until Issues = 0
-   Iterate until all markdown lint issues resolved.
+  Request: Perform one review pass and return a structured verdict with any issues found.
+  Caller ownership: `@doc-writer` will fix issues, verify locally, and re-invoke `@doc-reviewer` if another pass is needed.
    ```
-4. **Wait for doc-reviewer feedback**
+4. **Wait for the single review-pass response**
 5. **If feedback includes issues** (reviewer returns `REJECTED` or `CONDITIONAL` with problems):
    - You will receive structured issue list from `@doc-reviewer`
    - `@doc-writer` fixes each issue directly (save to file)
    - Confirm fixes in VS Code by checking Problems panel (should show 0 issues)
    - `@doc-writer` re-invokes `@doc-reviewer` for re-review (reviewer does NOT call back)
-6. **Repeat fix-and-verify until doc-reviewer confirms**:
+6. **Repeat the caller-owned fix-and-verify loop until doc-reviewer confirms**:
    - ✅ Verdict: `APPROVED` → Documentation is complete
    - ⚠️ Verdict: `CONDITIONAL` (non-blocking only) → Acceptable, documentation is complete
    - ❌ Verdict: `REJECTED` or `CONDITIONAL` (blocking issues) → Major issues, fix and re-submit for review
@@ -450,7 +450,7 @@ ACTION:
 3. Save file
 4. Check Problems panel (Ctrl+Shift+M) → should show 0 issues
 5. Confirm all fixes applied
-6. Reply: "Fixed. Ready for re-review."
+6. Re-invoke `@doc-reviewer` with the updated files for the next review pass.
 ```
 
 **Markdown Lint Rules**: See `@doc-reviewer` Phase 3-B for the authoritative lint rule taxonomy and fixes.
@@ -722,9 +722,9 @@ runSubagent(
 
 ---
 
-## Feedback Loop Workflow from Doc-Reviewer
+## Caller-Owned Re-Review Workflow
 
-**When `@doc-reviewer` calls you back with Problems issues**:
+**When `@doc-reviewer` returns Problems issues in its review response**:
 
 ### Loop Iteration Protocol
 
@@ -772,9 +772,9 @@ TIMELINE: Complete within this turn
    - [ ] No new issues introduced
    - [ ] All files saved
 
-5. **Reply to doc-reviewer**:
+5. **Re-invoke `@doc-reviewer`**:
    ```
-   I've fixed all issues found in VS Code Problems:
+  Files updated after the previous review pass:
    
    Fixed files:
    - [file1.md]: Fixed [N] issues (MD009, MD012, etc.)
@@ -786,7 +786,7 @@ TIMELINE: Complete within this turn
    - Problems panel shows 0 issues for these files
    - No new issues introduced
    
-   Ready for re-review.
+  Request: Perform one review pass on the updated files and return a structured verdict with any remaining issues.
    ```
 
 ### Markdown Lint Rules
@@ -796,12 +796,13 @@ TIMELINE: Complete within this turn
 ### Loop Continuation Rules
 
 **Continue looping if**:
-- doc-reviewer finds more issues after your fixes
+- doc-reviewer returns more issues after your fixes
 - You receive another Problems list from the same or adjacent files
-- Verdict is `CONDITIONAL` (issues remain but acceptable)
+- Verdict is `REJECTED` or `CONDITIONAL` with blocking issues
 
 **Stop looping if**:
 - doc-reviewer confirms verdict `APPROVED` (0 issues, documentation complete)
+- doc-reviewer confirms verdict `CONDITIONAL` with non-blocking issues only
 - 3 iterations reached (doc-reviewer will note in report)
 - Unable to fix certain issues (escalate to human review)
 
@@ -816,7 +817,7 @@ Issues: 0 (markdown linting: 0 | content: 0)
 
 ❌ **Issues remain if verdict is**:
 ```
-Verdict: CONDITIONAL | REJECTED
+Verdict: REJECTED or CONDITIONAL (blocking)
 Issues: [N] remaining
 Next Steps: [human review / rework required]
 ```

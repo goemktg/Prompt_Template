@@ -1,15 +1,13 @@
 ---
 name: doc-reviewer
-description: 'Documentation Quality Review for clarity, accuracy, completeness, and consistency. Returns APPROVED/ISSUES with actionable fixes. Triggers: review this doc, check documentation, doc quality, is this doc accurate. SRP: Review only (no writing).'
+description: 'Documentation Quality Review for clarity, accuracy, completeness, and consistency. Returns APPROVED, CONDITIONAL, or REJECTED with structured findings. Triggers: review this doc, check documentation, doc quality, is this doc accurate. SRP: Review only (no writing).'
 argument-hint: "Provide doc paths. Examples: 'Review README.md', 'Check API docs accuracy', 'Doc quality review for guides/'"
 model: Claude Opus 4.6 (copilot)
 target: vscode
 user-invocable: false
 tools:
   - read
-  - agent
   - search
-  - web
   - context7/*
   - memory/*
   - sequentialthinking/*
@@ -203,10 +201,10 @@ For each section:
 - ✅ **No issues**: Proceed to Phase 4 (Completeness)
 - ❌ **Issues found**: 
   1. Document ALL issues in structured list format (see Output Template)
-  2. **Return issues to caller** — do NOT invoke `@doc-writer`
-  3. Caller (doc-writer or skill driver) owns fix responsibility and re-invocation
-  4. Wait for re-review request with updated files
-  5. Only continue to Phase 4 when Problems shows 0 issues for the file
+  2. **Return issues to caller** — do NOT invoke any agent
+  3. Caller owns fix responsibility and any re-invocation
+  4. Stop and wait for a new invocation with updated files
+  5. The caller may choose to re-invoke review after fixes; this reviewer remains a single-pass check and does not decide phase progression
 
 **Audience Alignment:**
 - **For technical docs:** Assumes familiarity with the domain
@@ -462,8 +460,8 @@ _None_ ✅
 2. **If Issues Found**:
    - Document ALL issues in structured format (see Output Template)
    - Return verdict (`REJECTED` or `CONDITIONAL`) with full issue list
-   - **Do NOT call `@doc-writer`** — caller owns fix responsibility
-   - Wait for re-review request with corrected files
+  - **Do NOT call any agent** — caller owns fix responsibility
+  - Stop and wait for a new invocation with corrected files
 
 3. **If No Issues Found** → Continue with Review
    - Proceed to Phase 4 (Completeness check)
@@ -472,7 +470,7 @@ _None_ ✅
 
 ### Caller Responsibilities
 
-- `@doc-writer` or skill driver receives issue list
+- Caller receives issue list
 - Caller fixes issues directly
 - Caller re-invokes `@doc-reviewer` for re-review
 - Max 3 review cycles before escalation
@@ -482,19 +480,19 @@ _None_ ✅
 - **Max iterations**: 3 (tracked by caller, not reviewer)
 - **If 3 iterations reached with issues remaining**:
   - Document remaining issues in final report
-  - Mark verdict as `CONDITIONAL` (issues present but doc-writer iteration limit reached)
+  - Mark verdict as `CONDITIONAL` (issues present but caller iteration limit reached)
   - Provide clear fix guide for manual remediation
 
-### Success Criteria for Loop
+### Caller-Managed Completion Criteria
 
-✅ **Loop succeeds when**:
+✅ **Caller-managed review completes when**:
 - VS Code Problems shows 0 markdown lint issues
-- `@doc-writer` confirms all problems addressed
+- Caller confirms all reported problems addressed
 - No new issues introduced in fixes
 
-❌ **Loop fails when**:
+❌ **Caller-managed review remains unresolved when**:
 - Max 3 iterations reached
-- doc-writer unable to resolve certain issues (report as-is)
+- Caller unable to resolve certain issues (report as-is)
 - File structure fundamentally broken (escalate to human review)
 
 ---
@@ -529,11 +527,11 @@ _None_ ✅
 
 ---
 
-## Hard Rules for Loop
+## Hard Rules for Caller-Managed Re-Review
 
 1. **Never skip markdown linting**: Phase 3-B is MANDATORY before Phase 4
 2. **Problems panel is source of truth**: Use only VS Code Problems for linting issues
-3. **Iterate until clean**: Loop until Problems shows 0 issues or max iterations reached
-4. **Doc-writer is focused**: When called for fixes, doc-writer addresses ONLY the problems reported
+3. **Caller-owned iteration**: Caller re-invokes `@doc-reviewer` until Problems shows 0 issues or the caller reaches the max iteration limit
+4. **Caller stays focused**: The caller addresses ONLY the problems reported for that pass
 5. **No new issues**: Each iteration must not introduce new problems
 6. **Transparent reporting**: Document iteration count and reasons if loop terminates before clean

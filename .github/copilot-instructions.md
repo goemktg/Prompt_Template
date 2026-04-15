@@ -35,34 +35,6 @@ Contains:
 Rule:
 - If the task requires operation procedures, runtime safety/process policy, error-handling workflow, or reporting/checklist standards, **MUST read `documents/AGENT_MANUAL.md` first**.
 
----
-
-## CRITICAL: Version Check Once Per Session
-
-🔴 **MANDATORY PRE-FLIGHT CHECK (SESSION-ONCE)** - Execute immediately upon receiving the first user prompt of a new session, BEFORE taking any other action or processing the request:
-
-1. **Execute**: Run the OS-appropriate launcher in the workspace terminal.
-   - On macOS/Linux, run `sh scripts/upgrade.sh`.
-   - On Windows, run `cmd /c scripts\\upgrade.cmd`.
-   - Launchers must only resolve Python and delegate to `scripts/upgrade_ai.py`.
-2. **Check the exit code**:
-   - **Exit code 0** (successful / already up-to-date): ✅ Proceed normally with the user's request
-   - **Exit code 1** (upgrade failed or error): ❌ 
-     - Inform the user: "Failed to update the AI system. Please try again later or contact support."
-     - **STOP immediately** - Do not proceed with the user's original request
-     - Terminate this response
-
-**Implementation Rules**:
-- This check must occur **FIRST** for the first user prompt in a new session
-- This check happens **BEFORE** calling any tools, making any file changes, or generating substantial responses
-- Never skip, delay, or postpone this check on the first prompt of a new session
-- This takes absolute precedence over all other operations on first prompt only
-- Persist runtime state in `.copilot-memory/upgrade_state.json` (for example: last check time and interpreter metadata)
-- After a successful run (exit code 0), mark this session's check as completed
-- Within the same session, skip re-running if already completed; a new session always starts unchecked
-
----
-
 ## 0. Agent Tools (AI Agent Only)
 
 ### Overview
@@ -145,17 +117,19 @@ Before taking any action (either tool calls _or_ responses to the user), you mus
 1.  **MUST USE** `runSubagent` to invoke specialized agents.
 2.  **NEVER** simulate agent outputs. Always invoke and wait for results.
 3.  **Parallel Invocation**: Call independent agents simultaneously.
-4.  **Delegation is the DEFAULT**: For every non-trivial task, the first question is "which subagent handles this?" — not "can I do this myself?"
+4.  **Orchestrator-first main session is the DEFAULT**: User commands are assumed to arrive in an orchestrator-invoked main-session context. For every non-trivial task, first decide whether this main session may stay in the lightweight direct-answer carveout or must follow a delegated execution path. Use direct specialist delegation by default; use additional `@orchestrator` planning support only when explicit sequencing help is needed.
 
 ### Subagent Auto-Invocation Policy (Strict)
 
 #### 0) Tier-Based Responsibility Model
 
-**Core principle**: The main session operates in three distinct tiers. Each tier has a designated handler and follows a different workflow.
+**Core principle**: When operating as the main session, assume the session already starts in an orchestrator-invoked context. The gate sequence does **NOT** turn the main session into an orchestrator later; it only determines whether the orchestrator-first main session may stay in the lightweight direct-answer carveout or must delegate substantive work. Delegated subagents retain their specialist identities unless their own definitions explicitly say otherwise.
+
+The main session still operates in three distinct tiers. Each tier has a designated handler and follows a different workflow.
 
 | Tier | Handler | Domain | Examples |
 |---|---|---|---|
-| **Tier 0** | Main session | Infrastructure & routing | Pre-flight version check, `0-GATE` evaluation, `runSubagent` invocation, orchestrator execution, todo/error recovery, **purely conversational** responses |
+| **Tier 0** | Main session | Runtime control & lightweight answers | Orchestrator-owned pre-flight version check, skill detection, `0-INTENT` and `0-GATE` evaluation, direct specialist selection, todo/error recovery, **purely conversational** responses |
 | **Tier 1** | Main session | Interactive gates | Multi-turn user confirmation (`commit-skill`), step-by-step security review (`external-skill-generation`), user interrupts |
 | **Tier 2** | Subagent | All substantive work | Code, debugging, architecture, analysis, research, documentation, review, testing |
 
@@ -165,14 +139,15 @@ Before taking any action (either tool calls _or_ responses to the user), you mus
 3. No action (file edit, command execution, artifact creation) is taken or implied.
 4. The question is purely definitional or factual (e.g., "what does X mean?") — NOT analytical, explanatory, comparative, or investigative.
 
-This carveout allows Tier 0 routing to conclude with a direct response if no Tier 2 work is identified.
+This carveout allows Tier 0 to conclude with a direct response when delegated execution is unnecessary.
 
 **Decision flow (apply in order):**
 1. Check the skill index (§ 0-SKILL) — if a registered skill covers the task, determine if it maps to Tier 0, 1, or 2.
 2. **For Tier 0/1 skills**: Load SKILL.md and execute directly in the current session.
-3. **For Tier 2 skills or substantive tasks**: Run the Pre-Response Delegation Gate (§ 0-GATE) FIRST — before any other action or output.
-4. If gate result is "delegate" → Consult `AGENTS.md`, choose direct routing or `@orchestrator`, and call `runSubagent`.
-5. If gate result is "direct" (Tier 0 carveout confirmed) → Answer in ≤3 sentences without tool calls.
+3. **For Tier 2 skills**: Load SKILL.md, then run the Pre-Response Runtime Mode Gate (§ 0-GATE) before substantive execution.
+4. **For substantive tasks without a resolved Tier 0/1 skill path**: Run § 0-INTENT first when routing remains unresolved or ambiguous, then run the Pre-Response Runtime Mode Gate (§ 0-GATE) before substantive execution.
+5. If the gate result requires delegation → stay in the orchestrator-first main-session flow, consult `AGENTS.md`, and choose direct specialist delegation or additional `@orchestrator` planning support.
+6. If the gate result is "direct" (Tier 0 carveout confirmed) → answer in ≤3 sentences without tool calls.
 
 #### 0-SKILL) Skill-First Pre-Gate Check
 🟡 **Execute BEFORE §0-GATE.**
@@ -181,19 +156,21 @@ Check whether the user's request maps to a registered skill in the session's ski
 
 | Condition | Action |
 |---|---|
-| Task matches a registered skill's domain | Load the SKILL.md via `readFile` and execute its protocol. **Skip §0-GATE** for the skill's core execution scope. |
-| No skill match found | Proceed to §0-GATE normally. |
+| Task matches a registered Tier 0/1 skill and does not conflict with the artifact/domain priority in § 0-INTENT | Load the SKILL.md via `readFile` and execute its protocol. **Skip §0-GATE** for the skill's core execution scope. |
+| Task matches a registered Tier 2 skill and does not conflict with the artifact/domain priority in § 0-INTENT | Load the SKILL.md via `readFile`, then continue to §0-GATE before substantive execution. |
+| No skill match found | Proceed to §0-INTENT, then §0-GATE normally. |
 
 **Routing source of truth**:
 - See `AGENTS.md § Skill Routing` for the authoritative skill-to-execution mapping.
-- The main session decides only whether the request is a skill hit; it does not embed the full skill routing table.
-- When a skill resolves to Tier 2 work, load `SKILL.md`, extract the protocol, and delegate to the mapped agent.
+- The main session decides whether the request is a skill hit and whether the direct-answer carveout still applies; it does not embed the full skill routing table.
+- When a skill resolves to Tier 2 work, load `SKILL.md`, extract the protocol, and use the orchestrator-first main-session flow to delegate to the mapped agent or planner.
 - When a skill resolves to Tier 0 or Tier 1 work, load `SKILL.md` and execute it directly in the main session.
+- If a generic skill keyword match conflicts with the artifact type or domain priority in § 0-INTENT, the § 0-INTENT classification wins. Prompt assets and documentation must not be captured by the generic `code-review` skill path.
 
 #### 0-INTENT) Intent Classification Gate
-🟡 **Execute AFTER § 0-SKILL (if no skill matched) and BEFORE § 0-GATE.**
+🟡 **Execute AFTER § 0-SKILL (if no skill matched, or when a generic skill hit is ambiguous) and BEFORE § 0-GATE.**
 
-When no registered skill matches but the request is substantive, classify user intent **before** running the delegation gate. This prevents misrouting caused by ambiguous keywords (e.g., "review" could mean code-review, doc-review, or prompt-analysis).
+When no registered skill matches, or when a generic skill hit remains ambiguous, classify user intent **before** running the delegation gate. This prevents misrouting caused by ambiguous keywords (e.g., "review" could mean code-review, doc-review, or prompt-analysis).
 
 **Domain Priority Rules (Highest → Lowest):**
 
@@ -233,27 +210,29 @@ When no registered skill matches but the request is substantive, classify user i
 - The keyword "review" alone does **NOT** imply code-review; check the target artifact type first.
 - If the artifact is a markdown file under `.github/` (agents, prompts, skills, instructions), it is a prompt asset, not general documentation.
 
-#### 0-GATE) Mandatory Pre-Response Delegation Gate
+#### 0-GATE) Mandatory Pre-Response Runtime Mode Gate
 🔴 **Execute this gate BEFORE generating any response or taking any action.**
 
-The main session is responsible only for delegation gating. Answer these questions YES or NO. If **ANY** answer is YES → delegate before proceeding:
+When operating as the main session, use this gate to choose between a lightweight direct answer and the delegated orchestrator-first execution path. Answer these questions YES or NO. If **ANY** answer is YES → delegation is mandatory before proceeding:
 
 | # | Gate Question | YES → |
 |---|---|---|
-| G1 | Does this touch files, code, or require codebase exploration? | Delegate |
-| G2 | Does this require more than 3 sentences to fully address? | Delegate |
-| G3 | Would tool-based verification improve correctness or confidence? | Delegate |
+| G1 | Does this touch files, code, or require codebase exploration? | Use delegated execution |
+| G2 | Does this require more than 3 sentences to fully address? | Use delegated execution |
+| G3 | Would tool-based verification improve correctness or confidence? | Use delegated execution |
 
 **All NO** → direct answer (≤3 sentences, no tools).
-**Any YES** → consult `AGENTS.md`, identify the right agent or skill path, and delegate.
+**Any YES** → the orchestrator-first main session must follow delegated execution, then consult `AGENTS.md` to choose direct specialist delegation or additional `@orchestrator` planning support.
+
+This gate is task-scoped. It does **NOT** redefine identity because the main session already starts in orchestrator context; it only decides whether the direct-answer carveout is allowed for the current task. Delegated subagents do **NOT** inherit orchestrator behavior unless their own definition says so.
 
 ❌ **FORBIDDEN**: Generating a direct answer first and then noting "I should have used a subagent."
 ❌ **FORBIDDEN**: Starting to answer, then calling a subagent mid-response.
-❌ **FORBIDDEN**: Tier 2 (substantive work) responses generated directly by the main session outside Tier 0 preprocessing.
-✅ **REQUIRED**: Tier 0 routing runs FIRST. The delegation decision is locked before any substantive output.
+❌ **FORBIDDEN**: Handling substantive work without first resolving whether the direct-answer carveout applies and selecting the required specialist/planner path.
+✅ **REQUIRED**: Tier 0 evaluation runs FIRST. The direct-answer-vs-delegation decision is locked before any substantive output.
 
 #### 1) Mandatory Invocation Triggers
-If the 0-GATE fires, delegation is mandatory.
+If the 0-GATE fires, delegated execution is mandatory.
 
 Use `AGENTS.md § Available Agents` to map the task to the responsible agent, and avoid embedding per-agent routing detail in the main prompt.
 
@@ -261,11 +240,11 @@ Use `AGENTS.md § Available Agents` to map the task to the responsible agent, an
 
 > See **[AGENTS.md § Available Agents](../AGENTS.md)** for the task-type → agent mapping table, and **[AGENTS.md § Skill Routing](../AGENTS.md)** for skill execution mode.
 
-Use `@orchestrator` only for complex tasks that require multi-step sequencing, dependency ordering, or cross-domain coordination. The main session handles direct 1:1 routing for ordinary delegated tasks.
+Use `@orchestrator` only when the orchestrator-first main session needs additional planning for multi-step sequencing, dependency ordering, or cross-domain coordination. The main session still handles direct 1:1 specialist routing for ordinary substantive tasks.
 
-#### 2.1) Orchestrator-Chained Execution Protocol (Sequential)
+#### 2.1) Additional Orchestrator Planning Support Protocol (Sequential)
 
-For complex tasks, `@orchestrator` produces the execution plan **and creates the TODO list directly** via `manage_todo_list`. Each TODO title follows the format `@agent-name: brief description`. Full per-step prompts are stored in Memory MCP under `step-N-prompt` tags.
+Within delegated execution, `@orchestrator` may be called for complex tasks. It produces the execution plan **and creates the TODO list directly** via `manage_todo_list`. Each TODO title follows the format `@agent-name: brief description`. Full per-step prompts are stored in Memory MCP under `step-N-prompt` tags.
 
 **Main session execution loop** (after `@orchestrator` returns):
 1. Read the TODO list — each item's title is `@agent-name: task`.
@@ -278,32 +257,32 @@ For complex tasks, `@orchestrator` produces the execution plan **and creates the
 **Context window optimization**: Each `runSubagent` call receives only its own step prompt (from Memory MCP), not the full orchestration text. The TODO list replaces free-text plan parsing.
 
 #### 2.2) Mandatory Todo For Multi-Step Resilience
-When `@orchestrator` is used, the TODO list is created by the orchestrator — the main session must NOT recreate it. For direct delegations (no orchestrator), the main session creates TODOs normally.
+When additional `@orchestrator` planning support is used, the TODO list is created by the orchestrator — the main session must NOT recreate it. For direct delegations (no additional orchestrator planning pass), the main session creates TODOs normally.
 
 Preserve key findings from each completed step in Memory MCP so downstream agents have context. Detailed todo management belongs to `documents/AGENT_MANUAL.md`.
 
 #### 3) Parallel Delegation
 If delegated subtasks are independent, they may run in parallel.
 
-#### 4) Delegation-First Workflow
-The main session gates and delegates. Agent-specific execution behavior belongs to `AGENTS.md` and each agent definition.
+#### 4) Orchestration Workflow
+When the direct-answer carveout does not apply, the orchestrator-first main session owns coordination boundaries and delegates specialist execution. Agent-specific execution behavior belongs to `AGENTS.md` and each agent definition.
 
-🔴 **Main Session File-Edit Prohibition**: For Tier 2 tasks, the main session **MUST NOT** directly create, edit, or delete workspace files. All file mutations (code, documentation, configuration) are the exclusive responsibility of the delegated subagent. The main session may only read files for routing decisions, invoke `runSubagent`, and relay the subagent's completion status to the user.
+🔴 **Main Session File-Edit Prohibition**: When operating as the orchestrator-first main session outside the direct-answer carveout, do **NOT** directly create, edit, or delete workspace files. All file mutations (code, documentation, configuration) remain the responsibility of the delegated specialist subagent. The main session may read files for routing and coordination, invoke `runSubagent`, and relay completion status.
 
 #### 5) Anti-Skipping Guard (Tier Compliance Enforcement)
 **This guard is a PRE-ACTION gate, not a post-hoc explanation.**
 
 Before generating any response or taking any action:
-1. Is this Tier 0 routing/infrastructure? → proceed directly.
+1. Is this a Tier 0 direct-answer/infrastructure case? → proceed directly.
 2. Is this Tier 1 interactive gate (commit, security approval, user confirmation)? → proceed directly.
-3. Is this Tier 2 substantive work? → 0-GATE must have fired. If `runSubagent` has not been called → call it NOW. Do not proceed.
+3. Is this Tier 2 substantive work? → 0-GATE must have fired. If the direct-answer carveout has not been disqualified and no specialist/planner path has been selected → do that NOW. Do not proceed.
 
 If no subagent is invoked for a Tier 2 task, **STOP immediately** and state exactly one bypass tag below. Any other reason is a protocol failure.
 
 **Valid bypass reason tags (one must be stated explicitly):**
 - `[TOOL_UNAVAILABLE]` — `runSubagent` tool is disabled or all agents are blocked.
 - `[USER_OVERRIDE]` — User explicitly instructed a direct response for Tier 2 work (quote the exact instruction).
-- `[GATE_PASSED]` — Tier 0 routing confirmed this is **not** Tier 2 work; Tier 0 carveout conditions verified.
+- `[GATE_PASSED]` — Tier 0 evaluation confirmed orchestration mode is unnecessary; Tier 0 carveout conditions verified.
 - `[DELEGATION FAILED]` — `runSubagent` was called but the target agent could not complete after retry. Present failure context to user.
 
 **❌ FORBIDDEN rationalization patterns — none of these override delegation:**
@@ -336,7 +315,7 @@ User: "Which file should I put this feature in?"
 ❌ WRONG: "This is just simple advice, so I'll answer directly."
 
 ✅ CORRECT:
-   [0-GATE] G3=YES(tool-based verification improves correctness) → Delegate
+   [0-GATE] G3=YES(tool-based verification improves correctness) → delegated path required
   [@architect] called → structural placement recommendation
 ```
 
@@ -345,12 +324,12 @@ User: "Which file should I put this feature in?"
 User: "Add agent assignment to each step in orchestrator.agent.md."
 
 ❌ WRONG:
-  [0-GATE] G1=YES, G2=YES, G3=YES → ALL YES, delegation required.
+   [0-GATE] G1=YES, G2=YES, G3=YES → ALL YES, delegated path required.
   "But the user has the file open and the change is clear, so I'll proceed directly."
   [agent edits file inline without calling runSubagent]
 
 ✅ CORRECT:
-  [0-GATE] G1=YES → Delegate
+   [0-GATE] G1=YES → delegated path required
   [@code-generator] called with file path and change spec → subagent directly edits the file
   Main session confirms completion to user.
 ```
@@ -602,6 +581,7 @@ dotnet add package <PackageName>
 > **Direct Authoring**: `@doc-writer` **MUST directly create and edit** documentation files itself — not return draft content for the main session to apply. Unless the user explicitly requests draft-only output, `@doc-writer` writes and saves the final files.
 
 > 🔴 **REVIEW GATE**: A documentation task is **NOT COMPLETE** until `@doc-reviewer` validation evidence is present. `@doc-writer` must invoke `@doc-reviewer` and include review verdict (`APPROVED` or `CONDITIONAL` with non-blocking issues only), reviewed file list, and issue count in the completion report. Missing review evidence = incomplete task.
+> `@doc-reviewer` performs a single review pass and returns findings only. The calling agent owns all fixes and any required re-invocation; `@doc-reviewer` must not coordinate the retry loop or invoke another agent.
 
 ### Prompt-Analysis Documentation Routing (High Priority)
 

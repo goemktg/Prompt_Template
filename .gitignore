@@ -6,3 +6,4 @@ documents/final/*
 !documents/final/.gitkeep
 documents/drafts/*
 !documents/drafts/.gitkeep
+.DS_Store

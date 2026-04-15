@@ -177,10 +177,10 @@ This section is the single source of truth for skill-to-execution mapping. The m
 
 | Skill | Trigger Keywords | Execution Mode | Reason |
 | :--- | :--- | :--- | :--- |
-| `large-change-governance` | large change, major refactor, cross-domain change, multi-file restructure, architectural overhaul, introduce new workflow | **Tier 1 gate + Tier 2 delegation** | 4-phase process: Phase 1 (RESEARCH) and Phase 3 (IMPLEMENT) delegate to domain agents (`@master-prompt-writer`, `@architect`, `@code-generator`, `@doc-writer`, `@orchestrator`). Phase 2 (CONFIRM) runs in main session as Tier 1 interactive gate. Phase 4 (VERIFY) invokes reviewers. |
+| `large-change-governance` | large change, major refactor, cross-domain change, multi-file restructure, architectural overhaul, introduce new workflow | **Tier 1 gate + Tier 2 delegation** | 4-phase process: Phase 1 (RESEARCH) and Phase 3 (IMPLEMENT) run under the orchestrator-first main-session delegation flow and delegate to domain agents (`@master-prompt-writer`, `@architect`, `@code-generator`, `@doc-writer`, `@orchestrator`) as needed. Phase 2 (CONFIRM) runs in main session as Tier 1 interactive gate. Phase 4 (VERIFY) invokes reviewers. |
 | `commit-skill` | commit, save changes with git | **Main agent direct (Tier 1)** | Interactive protocol requires user confirmation between steps; subagent cannot pause for I/O |
 | `documentation` | write doc, create report, publish | **Delegate → `@doc-writer` (Tier 2)** | Substantive work; specialist subagent produces higher quality output |
-| `code-review` | review changes, review before merge | **Delegate → `@code-quality-reviewer` (Tier 2)** | Substantive work; dedicated review subagent |
+| `code-review` | review source code, code review, review code before merge | **Delegate → `@code-quality-reviewer` (Tier 2)** | Substantive work; dedicated review subagent |
 | `deep-research` | research, investigate (multi-source) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude` (Tier 2)** | Substantive work; multi-source research subagents |
 | `data-analysis` | analyze results, compare metrics | **Delegate → `search_subagent` (built-in) + main agent (Tier 2)** | Substantive work; exploration + synthesis pattern |
 | `skill-extension` | create new skill, new SKILL.md | **Delegate → `@code-generator` (Tier 2)** | Substantive work; structured file generation |
@@ -202,20 +202,20 @@ This section is the single source of truth for skill-to-execution mapping. The m
 
 Use this table to identify which agent to call for each task type. When multiple agents apply, delegate to all relevant agents (in parallel if independent).
 
-> **Pre-selection**: Read the gate result from `.github/copilot-instructions.md § 0-INTENT` and `§ 0-GATE` first, then use this table to choose the agent. Use `@orchestrator` only for complex multi-step work; do not use it as a universal router.
+> **Pre-selection**: Read the gate sequence from `.github/copilot-instructions.md § 0-SKILL`, `§ 0-INTENT`, and `§ 0-GATE` first, including whether the direct-answer carveout is still available. In this repository, user commands are assumed to arrive in an orchestrator-invoked main-session context. Use `@orchestrator` for additional planning support in complex multi-step work; do not use it as a universal router.
 >
 > **Domain Priority Reminder**: Prompt assets (`@master-prompt-writer`) > General docs (`@doc-writer`) > Code review (`@code-quality-reviewer`). The word "review" alone does NOT default to code-review — check artifact type.
 
 | Task Type | Agent | Description | Example Triggers |
 | :--- | :--- | :--- | :--- |
-| **Complex orchestration** | `@orchestrator` | Strategic planner. Returns execution blueprint; main session performs actual subagent calls. Planning-only — never writes code or edits files. **Call FIRST** when: task needs 3+ subagent steps, spans 3+ domains, has dependency ordering, or produces artifacts requiring downstream validation. | "plan this", "multi-phase task", "coordinate agents" |
+| **Complex orchestration** | `@orchestrator` | Strategic planner for the orchestrator-first main session. When user-invoked, it is the baseline main-session context; when called from within delegated execution, it provides additional planning support. It remains non-implementing for substantive work: execution blueprints, TODO creation, and sequencing only; specialist subagents perform file changes and other domain execution. | "plan this", "multi-phase task", "coordinate agents" |
 | **New code / feature implementation** | `@code-generator` | Code generation with best practices and type safety. | "implement X", "add feature Y", "write a function for Z" |
 | **Bug / error / failure diagnosis & fix** | `@fixer` | Autonomous problem-solving & execution agent. Diagnoses issues, implements fixes, executes code/tests, and verifies solutions. | "fix this", "error in", "not working", "debug" |
 | **Architecture / design planning** | `@architect` | Architecture Planner. Designs system architecture and technical solutions. | "design", "how should I structure", "best approach for" |
 | **Code review / quality gate** | `@code-quality-reviewer` | Code Quality Reviewer. Reviews **source code files only** (`.py`, `.ts`, `.js`, `.java`, `.c`, `.cpp`, etc.) for bugs, style, and standards compliance. Does NOT review documentation, prompt assets, or markdown files. | "review my code", "check this function", "PR code review", "is this code correct?", "code quality check" |
 | **Regression / test reliability** | `@qa-regression-sentinel` | Execution-based quality verification, reproduction scripts, and flaky test detection. | "run tests", "check for regressions", "flaky test" |
 | **Documentation writing** | `@doc-writer` | Documentation Writer (documentation only — not prompt assets). **Directly authors and edits** documentation files from requirements. Must write files itself, not return drafts for the main session to apply. Prompt authoring requests must be routed to `@master-prompt-writer`. | "write docs", "document this", "create README" |
-| **Documentation review** | `@doc-reviewer` | Documentation Reviewer. Reviews documentation for clarity and completeness. | "review this doc", "check documentation" |
+| **Documentation review** | `@doc-reviewer` | Documentation Reviewer. Performs a single review pass and returns structured findings only; the caller owns fixes and re-invocation. | "review this doc", "check documentation" |
 | **Theory / concept research** | `@research-gpt` | Theory-focused research (Concepts, Prior Work). | "explain theory behind", "what is X", "prior work on" |
 | **Implementation / API research** | `@research-gemini` | Implementation-focused research (Code, API, Hardware). | "how to implement X with library Y", "API usage for" |
 | **System / safety / risk research** | `@research-claude` | System/Safety-focused research (Complexity, Constraints). | "risks of", "constraints for", "safety analysis" |
@@ -231,7 +231,7 @@ Use this table to identify which agent to call for each task type. When multiple
 | **Research lineage / citation** | `@citation-tracer` | Builds research lineage via DFS citation chaining. Identifies foundational papers. | "find foundational papers for", "citation chain for" |
 | **Pattern extraction from history** | `@experience-curator` | Learns from project history. Extracts reusable patterns from logs, failures, and reviews. | "what did we learn?", "extract patterns from" |
 | **Codebase exploration / Q&A** | `search_subagent` (built-in) | VS Code built-in codebase exploration tool. Fast read-only search and Q&A. Not a custom agent file. | "where is X defined?", "how does Y work?", "find files matching" |
-| **Research-backed prompt engineering** | `@master-prompt-writer` | Designs, creates, edits, and **analyzes** prompt assets (`.agent.md`, `SKILL.md`, `.prompt.md`, `copilot-instructions.md`) grounded in the internal paper database. Also handles **routing policy improvements**, **agent/skill customization**, and **prompt-technique analysis**. Always directly authors files — no plan-only mode. Invokes `@doc-reviewer` for validation before completion. General project docs (not prompt assets) remain `@doc-writer`'s responsibility. | "write a prompt for", "which prompting technique", "select prompt technique", "prompt planning", "prompt blueprint", "프롬프트 설계", "프롬프트 전략", "prompt for agent", "prompt template", **"analyze routing"**, **"improve agent instructions"**, **"fix routing logic"**, **"review prompt asset"**, **"agent definition"**, **"skill file analysis"** |
+| **Research-backed prompt engineering** | `@master-prompt-writer` | Designs, creates, edits, and **analyzes** prompt assets (`.agent.md`, `SKILL.md`, `.prompt.md`, `copilot-instructions.md`) grounded in the internal paper database. Also handles **routing policy improvements**, **agent/skill customization**, and **prompt-technique analysis**. Always directly authors files — no plan-only mode. Invokes `@doc-reviewer` for validation before completion and owns any fix-and-re-review loop triggered by review findings. General project docs (not prompt assets) remain `@doc-writer`'s responsibility. | "write a prompt for", "which prompting technique", "select prompt technique", "prompt planning", "prompt blueprint", "프롬프트 설계", "프롬프트 전략", "prompt for agent", "prompt template", **"analyze routing"**, **"improve agent instructions"**, **"fix routing logic"**, **"review prompt asset"**, **"agent definition"**, **"skill file analysis"** |
 
 ## Available Skills
 
@@ -239,7 +239,7 @@ Use this table to identify which agent to call for each task type. When multiple
 | :--- | :--- | :--- |
 | `large-change-governance` | 4-phase governance workflow (RESEARCH → CONFIRM → IMPLEMENT → VERIFY) for repository-wide structural changes spanning multiple files/domains | **Tier 1 gate + Tier 2 delegation** (domain agents for substantive phases) |
 | `documentation` | Standardized documentation creation and formatting (subagent directly writes/edits files) | **Delegate → `@doc-writer`** |
-| `code-review` | Code quality checklist and best practices enforcement | **Delegate → `@code-quality-reviewer`** |
+| `code-review` | Source-code review checklist for correctness, regressions, and maintainability | **Delegate → `@code-quality-reviewer`** |
 | `deep-research` | Recursive research workflow (STORM-style) | **Delegate → `@research-gpt` / `@research-gemini` / `@research-claude`** |
 | `data-analysis` | Result visualization and statistical comparison | **Delegate → `search_subagent` (built-in) + main agent** |
 | `skill-extension` | Create and extend agent skills | **Delegate → `@code-generator`** |
