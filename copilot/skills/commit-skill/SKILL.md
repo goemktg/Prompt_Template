@@ -25,8 +25,8 @@ Never run git commit without explicit approval in the current conversation turn.
 
 Always run the OS-appropriate inspection script first. Base analysis on script output only.
 
-- macOS/Linux: sh .github/skills/commit-skill/scripts/inspect-changes.sh
-- Windows: cmd /c .github\skills\commit-skill\scripts\inspect-changes.cmd
+- macOS/Linux: sh copilot/skills/commit-skill/scripts/inspect-changes.sh
+- Windows: cmd /c copilot\skills\commit-skill\scripts\inspect-changes.cmd
 
 ## Workflow
 

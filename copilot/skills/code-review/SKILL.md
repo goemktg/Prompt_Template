@@ -29,7 +29,7 @@ This skill owns review and risk detection only:
 3. Policy and structure compliance
 - Operational files: English.
 - documents/: Korean.
-- Skill files use .github/skills/<skill-name>/SKILL.md with valid frontmatter.
+- Skill files use copilot/skills/<skill-name>/SKILL.md with valid frontmatter.
 
 4. Verification quality
 - Are tests updated where behavior changed?

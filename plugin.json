@@ -1,0 +1,12 @@
+{
+  "name": "prompt-template",
+  "description": "Reusable VS Code Copilot project template with shared agents and skills.",
+  "version": "0.1.0",
+  "author": {
+    "name": "goemktg"
+  },
+  "agents": "copilot/agents/",
+  "skills": ["copilot/skills/"],
+  "hooks": "copilot/hooks.json",
+  "mcpServers": "copilot/mcp.json"
+}

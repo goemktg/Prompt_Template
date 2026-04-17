@@ -64,7 +64,7 @@ Use these paths consistently:
 | `documents/final/report.md` | `## 결론` | `## Conclusion` |
 | `documents/drafts/plan.md` | `실행 명령: \`pytest\`` | `Run: \`pytest\`` |
 | `README.md` (repo root) | `## Installation` | `## 설치 방법` |
-| `.github/agents/*.agent.md` | `## Mission` | `## 미션` |
+| `copilot/agents/*.agent.md` | `## Mission` | `## 미션` |
 
 4. Quality pass
 - Remove ambiguity and repeated statements.

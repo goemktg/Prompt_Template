@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "syncPolicy": {
+    "overwrite": "force",
+    "backupExtension": ".bak"
+  },
+  "entries": [
+    {
+      "id": "workspace-agents-anchor",
+      "kind": "file",
+      "source": "AGENTS.md",
+      "target": "AGENTS.md"
+    },
+    {
+      "id": "shared-instructions",
+      "kind": "directory",
+      "source": "shared/instructions",
+      "target": ".github/instructions",
+      "include": [
+        "*.instructions.md",
+        "**/*.instructions.md"
+      ]
+    }
+  ]
+}

@@ -7,7 +7,7 @@ description: 'Create or refine single-responsibility SKILL.md files with valid f
 
 ## Usage
 
-Use this skill when creating a new skill or improving an existing one under .github/skills/.
+Use this skill when creating a new skill or improving an existing one under copilot/skills/.
 
 ## Responsibility
 
@@ -18,7 +18,7 @@ This skill owns skill authoring quality:
 
 ## Required Conventions
 
-- Path: .github/skills/<skill-name>/SKILL.md
+- Path: copilot/skills/<skill-name>/SKILL.md
 - Frontmatter required:
   - name
   - description (single quotes, 10-1024 chars)

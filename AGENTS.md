@@ -10,13 +10,13 @@
 
 **Out of Scope**:
 
-- Global normative policies (See `.github/copilot-instructions.md`)
+- Global normative policies (See `shared/copilot-instructions.md`)
 - Runtime operational procedures and execution checklists (See `documents/AGENT_MANUAL.md`)
 
 **References**:
 
 - **Manual**: `documents/AGENT_MANUAL.md` (Workflows)
-- **Policy**: `.github/copilot-instructions.md` (Rules)
+- **Policy**: `shared/copilot-instructions.md` (Rules)
 
 ## Project Overview
 
@@ -31,11 +31,18 @@ This is a universal project template designed for various types of development p
 
 ```text
 .
+├── shared/
+│   ├── copilot-instructions.md  # Source-of-truth global Copilot instructions
+│   └── instructions/            # Source-of-truth instruction files
 ├── .github/
-│   ├── agents/              # Custom agent definitions (.agent.md)
-│   ├── skills/              # Agent Skills (folders with SKILL.md)
-│   ├── prompts/             # Reusable prompt templates (.prompt.md)
-│   └── copilot-instructions.md  # Global Copilot instructions
+│   ├── instructions/            # Deployed instruction mirrors for workspace/runtime visibility
+│   └── prompts/                 # Reusable prompt templates (.prompt.md)
+├── copilot/
+│   ├── agents/                  # Runtime-owned agent definitions (.agent.md)
+│   ├── skills/                  # Skill definitions and bundled assets (auto-applied)
+│   ├── hooks.json               # Runtime hook manifest (optional)
+│   ├── hooks/                   # Runtime hook scripts (optional)
+│   └── mcp.json                 # Runtime MCP configuration
 ├── src/                     # Source code (adapt to your project)
 ├── tests/                   # Test files
 ├── scripts/                 # Automation scripts
@@ -60,7 +67,7 @@ This is a universal project template designed for various types of development p
 
 #### Agent Files (`*.agent.md`)
 
-Location: `.github/agents/`
+Location: `copilot/agents/`
 
 Custom agent definitions with specialized behaviors and tool access.
 
@@ -119,13 +126,17 @@ Your goal is to create a new configuration...
 
 #### Instruction Files (`*.instructions.md`)
 
-Location: `.github/` or configured folders
+Source-of-truth location: `shared/instructions/`
+
+Deployed mirror location: `.github/instructions/`
 
 Modular instruction sets that can be combined. Configure via `chat.instructionsFilesLocations` setting.
 
 #### Agent Skills (`skills/*/SKILL.md`)
 
-Location: `.github/skills/<skill-name>/SKILL.md`
+Skills are auto-applied from `copilot/skills/<skill-name>/SKILL.md`.
+
+Skills can include bundled assets (scripts, templates, data files) in their respective directories.
 
 - Each skill is a folder containing a `SKILL.md` file
 - SKILL.md must have `name` field (lowercase with hyphens, matching folder name)
@@ -154,16 +165,16 @@ description: 'Description of the skill and when it should be loaded.'
 
 **For Agents:**
 
-1. Create `.github/agents/<name>.agent.md` with proper frontmatter
+1. Create `copilot/agents/<name>.agent.md` with proper frontmatter
 2. Define the agent's purpose, tools, and instructions
 3. Test the agent with sample prompts
 
 **For Skills:**
 
-1. Create `.github/skills/<skill-name>/SKILL.md`
+1. Create `copilot/skills/<skill-name>/SKILL.md`
 2. Add YAML frontmatter with `name` and `description`
 3. Write clear instructions and examples
-4. Optionally add bundled assets (scripts, templates)
+4. Optionally add bundled assets (scripts, templates, data files) in the skill's directory
 
 **For Prompts:**
 
@@ -186,7 +197,7 @@ This section is the single source of truth for skill-to-execution mapping. The m
 | `skill-extension` | create new skill, new SKILL.md | **Delegate → `@code-generator` (Tier 2)** | Substantive work; structured file generation |
 | `external-skill-generation` | import external skill | **Tier 1 gate + Tier 2 delegation** | Security review gates (steps 1, 3, 6) run in main session (Tier 1). Substantive extraction and rewrite (steps 2, 4, 5) delegate to `@code-generator` via `runSubagent`. Main session holds approval authority between phases. |
 | `paper-catalog-update` | update prompt paper catalog, run catalog update procedure, improve catalog update procedure | **Delegate → `@master-prompt-writer` (Tier 2)** | Substantive work; maintains the paper catalog and supports prompt planning from curated papers |
-| `copilot-eval-benchmark` | benchmark copilot, score customized copilot, swe-bench verified import | **Main agent direct (Tier 1/2 hybrid)** | Local Copilot stack cannot be fully headless; use semi-automated run-sheet + scoring pipeline |
+| `copilot-eval-benchmark` | benchmark copilot, score customized copilot, swe-bench verified import | **Main agent direct (Tier 1/2 hybrid; no SKILL.md file)** | Local Copilot stack cannot be fully headless; use semi-automated run-sheet + scoring pipeline without a loadable SKILL.md asset |
 | **Prompt planning (direct agent)** | design prompt, plan prompt, 프롬프트 설계, 프롬프트 전략 | **Delegate → `@master-prompt-writer` (Tier 2)** | Research-grounded prompt engineering; always directly authors prompt assets (no plan-only mode) |
 | **Prompt analysis / technique report** | analyze prompt, prompt technique report, prompt paper analysis, 프롬프트 기법 분석 | **Delegate → `@master-prompt-writer` (Tier 2), then `@doc-writer` for `documents/` finalization** | Domain expertise required; 2-step handoff: @master-prompt-writer produces content, @doc-writer formats and publishes to `documents/` |
 
@@ -202,7 +213,7 @@ This section is the single source of truth for skill-to-execution mapping. The m
 
 Use this table to identify which agent to call for each task type. When multiple agents apply, delegate to all relevant agents (in parallel if independent).
 
-> **Pre-selection**: Read the gate sequence from `.github/copilot-instructions.md § 0-SKILL`, `§ 0-INTENT`, and `§ 0-GATE` first, including whether the direct-answer carveout is still available. In this repository, user commands are assumed to arrive in an orchestrator-invoked main-session context. Use `@orchestrator` for additional planning support in complex multi-step work; do not use it as a universal router.
+> **Pre-selection**: Read the gate sequence from `shared/copilot-instructions.md § 0-SKILL`, `§ 0-INTENT`, and `§ 0-GATE` first, including whether the direct-answer carveout is still available. In this repository, user commands are assumed to arrive in an orchestrator-invoked main-session context. Use `@orchestrator` for additional planning support in complex multi-step work; do not use it as a universal router.
 >
 > **Domain Priority Reminder**: Prompt assets (`@master-prompt-writer`) > General docs (`@doc-writer`) > Code review (`@code-quality-reviewer`). The word "review" alone does NOT default to code-review — check artifact type.
 
@@ -216,6 +227,7 @@ Use this table to identify which agent to call for each task type. When multiple
 | **Regression / test reliability** | `@qa-regression-sentinel` | Execution-based quality verification, reproduction scripts, and flaky test detection. | "run tests", "check for regressions", "flaky test" |
 | **Documentation writing** | `@doc-writer` | Documentation Writer (documentation only — not prompt assets). **Directly authors and edits** documentation files from requirements. Must write files itself, not return drafts for the main session to apply. Prompt authoring requests must be routed to `@master-prompt-writer`. | "write docs", "document this", "create README" |
 | **Documentation review** | `@doc-reviewer` | Documentation Reviewer. Performs a single review pass and returns structured findings only; the caller owns fixes and re-invocation. | "review this doc", "check documentation" |
+| **Shell / runtime execution** | `@executor` | Execution specialist for shell-native commands and runtime tasks. Uses terminal execution for shell-native tools and routes Python execution through pylance-mcp-server/pylanceRunCodeSnippet instead of terminal Python by default. | "run this command", "execute build", "install dependency", "run tests in terminal" |
 | **Theory / concept research** | `@research-gpt` | Theory-focused research (Concepts, Prior Work). | "explain theory behind", "what is X", "prior work on" |
 | **Implementation / API research** | `@research-gemini` | Implementation-focused research (Code, API, Hardware). | "how to implement X with library Y", "API usage for" |
 | **System / safety / risk research** | `@research-claude` | System/Safety-focused research (Complexity, Constraints). | "risks of", "constraints for", "safety analysis" |
@@ -246,14 +258,14 @@ Use this table to identify which agent to call for each task type. When multiple
 | `paper-catalog-update` | Monthly update workflow for prompt engineering paper catalog (freshness check, scoring, add/retire, metadata sync) | **Delegate → `@master-prompt-writer`** |
 | `external-skill-generation` | Generate skills from external documentation | **Tier 1 gate + Tier 2 delegation** (`@code-generator` for extraction/rewrite phases) |
 | `commit-skill` | Commit workflow with diff-based message generation and explicit user confirmation gate before `git commit` | **Main agent direct** (interactive gate) |
-| `copilot-eval-benchmark` | Semi-automated scoring workflow for customized local Copilot, including optional SWE-bench Verified task import | **Main agent direct** |
+| `copilot-eval-benchmark` | Semi-automated scoring workflow for customized local Copilot, including optional SWE-bench Verified task import | **Main agent direct (Tier 1/2 hybrid; no SKILL.md file)** |
 
 ## Adding Custom Agents
 
 To add project-specific agents:
 
 1. Define agent roles and capabilities in this file
-2. Create `.github/agents/<name>.agent.md` with proper frontmatter
+2. Create `copilot/agents/<name>.agent.md` with proper frontmatter
 3. Reference agents in tasks using `@agent-name`
 4. Use `runSubagent` to invoke specialized agents
 5. Document agent protocols and expected outputs
@@ -306,4 +318,4 @@ Refer to `documents/PROJECT.md` for project-specific agent configurations and wo
 - Project Documentation:
   - [`documents/PROJECT.md`](documents/PROJECT.md) - Project overview and status
   - [`documents/AGENT_MANUAL.md`](documents/AGENT_MANUAL.md) - AI Agent operation manual
-  - [`.github/copilot-instructions.md`](.github/copilot-instructions.md) - Development guidelines
+  - [`shared/copilot-instructions.md`](shared/copilot-instructions.md) - Source-of-truth development guidelines

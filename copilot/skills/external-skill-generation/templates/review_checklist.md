@@ -79,7 +79,7 @@ jq . FILE.json > /dev/null && echo "Valid JSON" || echo "Invalid JSON"
 
 ## Final Gate
 
-- [ ] **Ready for `.github/skills/`**: Content meets all criteria above
+- [ ] **Ready for `copilot/skills/`**: Content meets all criteria above
 - [ ] **temp/ cleanup planned**: Will delete source files after extraction
 - [ ] **No sensitive data**: No API keys, credentials, or PII included
 

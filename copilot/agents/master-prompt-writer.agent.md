@@ -168,8 +168,8 @@ mcp_memory_store({
 
 | Task Type | Allowed Write Targets | Prohibited Write Targets |
 |-----------|----------------------|-------------------------|
-| **Explicit prompt authoring** (user requests new/modified prompt asset) | `.github/agents/*.agent.md`, `.github/skills/*/SKILL.md`, `.github/prompts/*.prompt.md`, `*.instructions.md` | None (full authority within scope) |
-| **Prompt analysis / technique report** | `temp/`, `documents/drafts/` (fact sheets only) | Active system files (`.github/agents/`, `.github/skills/`, `.github/prompts/`, `copilot-instructions.md`), `documents/final/` |
+| **Explicit prompt authoring** (user requests new/modified prompt asset) | `copilot/agents/*.agent.md`, `copilot/skills/*/SKILL.md`, `.github/prompts/*.prompt.md`, `*.instructions.md` | None (full authority within scope) |
+| **Prompt analysis / technique report** | `temp/`, `documents/drafts/` (fact sheets only) | Active system files (`copilot/agents/`, `copilot/skills/`, `.github/prompts/`, `copilot-instructions.md`), `documents/final/` |
 | **Catalog update** (`paper-catalog-update` skill) | `documents/reference/papers/**` | All other paths |
 
 **Enforcement**: Before any file write, verify task type matches authorized targets. Analysis tasks must NOT edit active customization files even if "fixing an issue discovered during analysis."
@@ -211,7 +211,7 @@ The agent MAY proceed **only if** the user states the purpose and the request is
 
 ⚠️ **Do not execute update logic from this file directly.**
 Use the `paper-catalog-update` skill as the single source of truth for update procedure.
-Reference definition file: `.github/skills/paper-catalog-update/SKILL.md`.
+Reference definition file: `copilot/skills/paper-catalog-update/SKILL.md`.
 
 ---
 

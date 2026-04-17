@@ -2,6 +2,7 @@
 __pycache__/
 CONTRIBUTING.md
 references/*
+!references/.gitkeep
 documents/final/*
 !documents/final/.gitkeep
 documents/drafts/*
