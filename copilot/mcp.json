@@ -12,19 +12,12 @@
       "type": "stdio",
       "command": "uv",
       "args": [
-        "tool",
         "run",
-        "--from",
-        "mcp-memory-service",
-        "memory",
-        "server"
-      ],
-      "env": {
-        "MCP_MEMORY_STORAGE_BACKEND": "sqlite_vec",
-        "MCP_MEMORY_SQLITE_PATH": "${workspaceFolder}/.copilot-memory/memory.db",
-        "CUDA_VISIBLE_DEVICES": "",
-        "MCP_MEMORY_USE_ONNX": "1"
-      }
+        "--no-project",
+        "python",
+        "-c",
+        "import os, subprocess, sys\nd = os.getcwd()\nroot = d\nfor _ in range(20):\n    if os.path.isfile(os.path.join(d, 'plugin.json')) and os.path.isfile(os.path.join(d, 'copilot', 'mcp.json')):\n        root = d\n        break\n    parent = os.path.dirname(d)\n    if parent == d:\n        break\n    d = parent\nmem = os.path.join(root, '.copilot-memory')\nos.makedirs(mem, exist_ok=True)\nenv = os.environ.copy()\nenv.update({'MCP_MEMORY_STORAGE_BACKEND': 'sqlite_vec', 'MCP_MEMORY_SQLITE_PATH': os.path.join(mem, 'memory.db'), 'CUDA_VISIBLE_DEVICES': '', 'MCP_MEMORY_USE_ONNX': '1'})\nsys.exit(subprocess.run(['uv', 'tool', 'run', '--from', 'mcp-memory-service', 'memory', 'server'], env=env).returncode)"
+      ]
     },
     "sequentialthinking": {
       "type": "stdio",

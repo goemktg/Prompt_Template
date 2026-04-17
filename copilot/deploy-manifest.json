@@ -12,6 +12,18 @@
       "target": "AGENTS.md"
     },
     {
+      "id": "constitution",
+      "kind": "file",
+      "source": "constitution.md",
+      "target": "constitution.md"
+    },
+    {
+      "id": "shared-copilot-instructions",
+      "kind": "file",
+      "source": "shared/copilot-instructions.md",
+      "target": ".github/copilot-instructions.md"
+    },
+    {
       "id": "shared-instructions",
       "kind": "directory",
       "source": "shared/instructions",

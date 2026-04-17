@@ -207,7 +207,6 @@ Use **Memory MCP** (`mcp_memory_*` tools) for transient data:
 
 - **[documents/PROJECT.md](documents/PROJECT.md)** - Project overview and specifics
 - **[AGENTS.md](AGENTS.md)** - AI agent documentation (must-read!)
-- **[documents/AGENT_MANUAL.md](documents/AGENT_MANUAL.md)** - AI agent operation manual
 - **[documents/QUICKSTART.md](documents/QUICKSTART.md)** - Quick start guide
 - **[documents/CHANGELOG.md](documents/CHANGELOG.md)** - Change history
 - **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Development guidelines

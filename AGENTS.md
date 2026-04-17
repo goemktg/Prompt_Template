@@ -11,12 +11,19 @@
 **Out of Scope**:
 
 - Global normative policies (See `shared/copilot-instructions.md`)
-- Runtime operational procedures and execution checklists (See `documents/AGENT_MANUAL.md`)
+- Runtime execution details that belong to the active policy, skill, or agent asset
 
 **References**:
 
-- **Manual**: `documents/AGENT_MANUAL.md` (Workflows)
+- **Constitution**: `constitution.md` (Immutable governance principles)
 - **Policy**: `shared/copilot-instructions.md` (Rules)
+- **Instruction Files**: `shared/instructions/*.instructions.md` (Surface-specific authoring rules)
+
+**Authority Boundary**:
+
+- Global policy lives in `shared/copilot-instructions.md`.
+- Surface-specific authoring rules live in `shared/instructions/` and deployed instruction mirrors.
+- This file owns agent and skill catalog information, routing, and repository structure guidance.
 
 ## Project Overview
 
@@ -31,6 +38,7 @@ This is a universal project template designed for various types of development p
 
 ```text
 .
+├── constitution.md              # Thin immutable governance principles
 ├── shared/
 │   ├── copilot-instructions.md  # Source-of-truth global Copilot instructions
 │   └── instructions/            # Source-of-truth instruction files
@@ -54,8 +62,8 @@ This is a universal project template designed for various types of development p
 │   │   └── technical/       # API docs, technical guides
 │   ├── templates/           # Document templates
 │   └── skills/              # Human-readable skill references (optional)
-├── reference_codes/         # Reference code from external projects
-│   └── [external mods/libs] # For implementation reference
+├── references/              # Reference repositories and external examples
+│   └── [external projects]  # For implementation and governance reference
 ├── results/                 # Execution results (if applicable)
 ├── logs/                    # Application logs
 └── temp/                    # Temporary files (gitignored)
@@ -307,7 +315,7 @@ To add project-specific agents:
 - **Common Skills**: `code-review`, `documentation`
 - **Testing**: Unit tests, integration tests
 
-Refer to `documents/PROJECT.md` for project-specific agent configurations and workflows.
+Refer to `documents/PROJECT.template.md` for project-specific agent configuration patterns and workflow anchors.
 
 ## Related Resources
 
@@ -316,6 +324,6 @@ Refer to `documents/PROJECT.md` for project-specific agent configurations and wo
 - [VS Code Copilot Customization](https://code.visualstudio.com/docs/copilot/customization/agent-skills) - Official documentation
 - [GitHub Copilot Documentation](https://docs.github.com/en/copilot) - Complete Copilot guide
 - Project Documentation:
-  - [`documents/PROJECT.md`](documents/PROJECT.md) - Project overview and status
-  - [`documents/AGENT_MANUAL.md`](documents/AGENT_MANUAL.md) - AI Agent operation manual
+  - [`documents/PROJECT.template.md`](documents/PROJECT.template.md) - Project overview template and status anchor
+  - [`constitution.md`](constitution.md) - Immutable governance principles and ownership boundaries
   - [`shared/copilot-instructions.md`](shared/copilot-instructions.md) - Source-of-truth development guidelines

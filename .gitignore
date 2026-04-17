@@ -8,3 +8,4 @@ documents/final/*
 documents/drafts/*
 !documents/drafts/.gitkeep
 .DS_Store
+.github/
