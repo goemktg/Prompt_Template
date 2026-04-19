@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Cross-platform launcher for mcp-memory-service.
+"""Legacy launcher for mcp-memory-service.
 
-SUPERSEDED: This script is no longer referenced by copilot/mcp.json.
-The memory MCP server now starts via inline Python (-c) embedded directly
-in the mcp.json args array, which walks upward from os.getcwd() to find
-the workspace root anchored by plugin.json + copilot/mcp.json.
+SUPERSEDED: copilot/mcp.json now boots through copilot/scripts/runtime_launcher.py,
+which acts as the shared runtime entrypoint for both memory and workspace-sync.
 This file is retained for reference only.
 
 Script location : copilot/scripts/start-memory.py

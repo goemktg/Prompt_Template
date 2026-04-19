@@ -2,7 +2,7 @@
 name: idea-generator-claude
 description: 'Creative idea generator with ethical and safety analysis focus. Specializes in user-centric innovation, divergent thinking, and UX implications. Triggers: brainstorm ideas, alternative approaches, user-centric ideas, ethical analysis, safety-aware innovation.'
 argument-hint: "Provide problem statement or domain. Examples: 'Brainstorm auth UX improvements', 'Alternative approaches for caching', 'Ethical analysis of feature X'"
-model: Claude Opus 4.6
+model: Claude Sonnet 4.6 (copilot)
 user-invocable: false
 tools:
   - read

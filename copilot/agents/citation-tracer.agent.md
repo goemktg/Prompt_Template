@@ -2,7 +2,7 @@
 name: citation-tracer
 description: 'Research lineage mapper via depth-first citation chaining. Identifies foundational papers and research evolution from a seed paper. Triggers: find foundational papers, citation chain, research lineage, trace citations, paper genealogy.'
 argument-hint: "Provide seed paper (arXiv ID, DOI, or Title). Examples: 'Citation chain for Attention Is All You Need', 'Foundational papers for RAFT consensus', 'Research lineage of transformer architecture'"
-model: Claude Opus 4.6
+model: Claude Sonnet 4.6 (copilot)
 user-invocable: false
 tools:
   - read

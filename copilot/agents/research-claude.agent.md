@@ -11,7 +11,7 @@ tools:
   - memory/memory_update
   - ms-vscode.vscode-websearchforcopilot/websearch
   - web
-model: Claude Opus 4.6 (copilot)
+model: Claude Sonnet 4.6 (copilot)
 user-invocable: false
 ---
 

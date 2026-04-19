@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "python scripts/session_init.py",
+        "cwd": "copilot/hooks",
+        "timeoutSec": 10
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "python scripts/session_end.py",
+        "cwd": "copilot/hooks",
+        "timeoutSec": 10
+      }
+    ],
+    "preCompact": [
+      {
+        "type": "command",
+        "bash": "python pre-compact.py",
+        "cwd": "copilot/hooks",
+        "timeoutSec": 5
+      }
+    ]
+  }
+}

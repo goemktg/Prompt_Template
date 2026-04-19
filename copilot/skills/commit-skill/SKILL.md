@@ -33,7 +33,7 @@ Always run the OS-appropriate inspection script first. Base analysis on script o
 1. Inspect working tree and changes since HEAD with the inspection script.
 2. Summarize changed files and change intent.
 3. Generate a Conventional Commits candidate message.
-4. Ask for explicit confirmation before commit.
+4. Ask for explicit confirmation before commit and remain in the Tier 1 confirmation gate until the user responds.
 5. On approval, stage relevant files and execute commit.
 
 ## Commit Message Rules
@@ -46,6 +46,7 @@ Always run the OS-appropriate inspection script first. Base analysis on script o
 
 ## Confirmation Rules
 
+- Treat the confirmation step as an explicit `AWAIT` boundary: do not stage or commit while approval is pending.
 - Approve examples: 진행, yes, approve, 커밋해.
 - Reject examples: 취소, no, cancel, stop.
 - Ambiguous input: ask clarification and do not commit.

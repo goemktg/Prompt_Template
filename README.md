@@ -2,7 +2,7 @@
 
 A standardized template for **any software development project** with **GitHub Copilot** integration and AI-powered workflows.
 
-> **📌 Project-Specific Details**: For actual project structure, build instructions, and tech stack, refer to **[documents/PROJECT.md](documents/PROJECT.md)**.
+> **📌 Project-Specific Details**: Add project-specific structure, build instructions, and tech stack documentation under `documents/` as you adapt this template.
 
 ## Features
 
@@ -12,6 +12,10 @@ A standardized template for **any software development project** with **GitHub C
 - 📝 **Documentation-First**: Structured documentation workflow with templates
 - 🧩 **Extensible**: Agent skills for automated workflows and best practices
 - 🌐 **Multi-Language**: Support for Korean + English documentation
+
+## Operating Model
+
+This template currently uses a lifecycle-first operating model for non-trivial AI work: `INIT -> ATOMIZE -> PLAN -> EXECUTE -> REPORT -> AWAIT -> FINALIZE`. In practice, the orchestrator coordinates task boundaries and specialist agents handle substantive execution.
 
 ## Quick Start
 
@@ -33,25 +37,31 @@ cd <project-directory>
 # RimWorld Mod: Copy to mods folder and launch game
 ```
 
+To register this repository as a local VS Code Copilot plugin on Windows, run `scripts\\install_vscode_plugin.cmd`. The Python entrypoint is `scripts/install_vscode_plugin.py` and updates the VS Code user `settings.json` `chat.pluginLocations` value for this plugin root.
+
 ## Project Structure
 
-> **📌 For detailed project structure**: See **[documents/PROJECT.md](documents/PROJECT.md)** for the actual directory layout and organization specific to this project.
+> **📌 For detailed project structure**: Document the project-specific directory layout under `documents/` as you adapt this template.
 >
-> **📌 For extending this template**: See **[CONTRIBUTING.md](CONTRIBUTING.md)** to understand which file to edit when adding policies, procedures, or definitions.
+> **📌 For extending this template**: If [CONTRIBUTING.md](CONTRIBUTING.md) exists, use it to decide which file to edit when adding policies, procedures, or definitions.
 
 This template provides a standardized structure that adapts to any project type:
 
 ```text
 .
-├── .github/                 # GitHub Copilot configuration
+├── .github/                 # Runtime-visible mirrors and instructions
+│   ├── instructions/        # Deployed instruction mirrors
+│   └── copilot-instructions.md
+├── copilot/                 # Runtime-owned Copilot assets
 │   ├── agents/              # Custom agents (.agent.md)
 │   ├── skills/              # Agent Skills (workflows)
-│   └── copilot-instructions.md
+│   ├── hooks.json           # Hook manifest
+│   └── mcp.json             # MCP server manifest
 ├── documents/               # Documentation hub
-│   ├── PROJECT.md           # ⭐ Project overview (start here!)
 │   ├── final/               # Published documents
 │   ├── drafts/              # Work in progress
-│   └── reference/           # External references
+│   ├── reference/           # Technical and paper references
+│   └── templates/           # Reusable doc templates
 ├── src/                     # Source code
 ├── tests/                   # Test files
 ├── scripts/                 # Automation scripts
@@ -71,7 +81,9 @@ This template includes pre-configured GitHub Copilot agents for common developme
 
 | Agent | Description |
 | :--- | :--- |
-| `@orchestrator` | Autonomous Task Manager & Master Planner |
+| `@orchestrator` | Lifecycle-first coordinator for complex multi-agent workflows |
+| `@deep-think-mediator` | Optional mediator for explicit deep-think protocol flows; uses a Gemini-family runtime path only when the host environment provides native Gemini access outside the repo-owned runtime |
+| `@dt-council-mediator` | Optional mediator for explicit council protocol flows; uses a Gemini-family runtime path only when the host environment provides native Gemini access outside the repo-owned runtime |
 | `@fixer` | Autonomous problem-solving & execution agent |
 | `@doc-writer` | Documentation Writer (creates structured docs) |
 | `@doc-reviewer` | Documentation Reviewer (quality checks) |
@@ -95,10 +107,17 @@ Agent Skills are specialized workflows automatically loaded by Copilot:
 | :--- | :--- |
 | `documentation` | Standardized doc creation and formatting |
 | `code-review` | Code quality checklist and best practices |
+| `commit-skill` | Commit workflow with explicit confirmation |
 | `deep-research` | Recursive research workflow (STORM-style) |
+| `deep-think` | Optional mediator-first deep reasoning workflow |
 | `data-analysis` | Result visualization and statistical comparison |
+| `dt-council` | Optional mediator-first multi-perspective council workflow |
+| `lifecycle-runtime-ops` | Verify runtime activation, write lifecycle transitions, and check refresh or cleanup state |
 | `skill-extension` | Create and extend agent skills |
 | `external-skill-generation` | Generate skills from external documentation |
+| `paper-catalog-update` | Refresh the prompt engineering paper catalog |
+
+The baseline path is lifecycle-first orchestration, and mediator or council-style coordination is available as optional explicit overlays rather than the universal default. This repository does not ship a local Gemini MCP backend. If a mediator protocol expects a Gemini-family path, it should use host-provided native Gemini access when available and otherwise return a blocked or degraded result.
 
 **See [AGENTS.md](AGENTS.md) for usage examples.**
 
@@ -119,7 +138,7 @@ Agent Skills are specialized workflows automatically loaded by Copilot:
 1. **Write drafts in `documents/drafts/`** - Not ready for publication
 2. **Move to `documents/final/`** - After review and approval
 3. **Use Memory MCP for notes** - Don't create `*.memory.md` files
-4. **Follow project language policy** - See `.github/copilot-instructions.md`
+4. **Follow project language policy** - See `shared/copilot-instructions.md` (runtime mirror: `.github/copilot-instructions.md`)
 
 ## Development Workflow
 
@@ -132,15 +151,15 @@ Agent Skills are specialized workflows automatically loaded by Copilot:
 
 ### Using Skills
 
-Skills are automatically loaded by Copilot when relevant. You can also manually load them:
+Skills are automatically loaded by Copilot when relevant trigger phrases match a skill definition in `copilot/skills/<name>/SKILL.md`.
 
-```bash
-# Load a skill
-@workspace /skills documentation
+Example:
 
-# Use skill in context
-@doc-writer Create a technical guide for feature X using the documentation skill
+```text
+@doc-writer Create a technical guide for feature X.
 ```
+
+Use `AGENTS.md` and each `SKILL.md` file to confirm the expected trigger conditions and execution mode.
 
 ### Memory Management
 
@@ -158,7 +177,7 @@ Use **Memory MCP** (`mcp_memory_*` tools) for transient data:
 
 **RimWorld Mod Development**:
 
-- Structure: See [documents/PROJECT.md](documents/PROJECT.md)
+- Structure: Add a project-specific guide under `documents/`
 - Build: MSBuild, .NET Framework 4.8
 - Test: In-game testing with Debug Mode
 
@@ -187,33 +206,34 @@ Use **Memory MCP** (`mcp_memory_*` tools) for transient data:
 
 ### Customization Steps
 
-1. **Update `documents/PROJECT.md`** - Add project-specific details
-2. **Configure `.github/copilot-instructions.md`** - Set coding standards
-3. **Add custom agents** - Create `.github/agents/<name>.agent.md`
-4. **Create skills** - Add `.github/skills/<name>/SKILL.md`
+1. **Add project-specific docs under `documents/`** - Capture structure, build, and workflow details for your project
+2. **Configure `shared/copilot-instructions.md`** - Set coding standards, then sync `.github/copilot-instructions.md`
+3. **Add custom agents** - Create `copilot/agents/<name>.agent.md`
+4. **Create skills** - Add `copilot/skills/<name>/SKILL.md`; use `copilot/skills/lifecycle-runtime-ops/SKILL.md` as the runtime-operations reference when adjusting activation, transition, refresh, or cleanup procedures
 5. **Update AGENTS.md** - Document your custom agents
 
 ## Getting Started
 
 **First-time project setup**:
 
-1. **Read [documents/PROJECT.md](documents/PROJECT.md)** - Understand your project
+1. **Read this README** - Understand the template's baseline structure and workflow
 2. **Check [AGENTS.md](AGENTS.md)** - Learn about available agents
-3. **Review [documents/QUICKSTART.md](documents/QUICKSTART.md)** - Quick start guide
-4. **Follow [documents/BUILD_GUIDE.md](documents/BUILD_GUIDE.md)** - Build your project
-5. **Use [documents/TEST_GUIDE.md](documents/TEST_GUIDE.md)** - Test your work
+3. **Review `shared/copilot-instructions.md`** - Understand repository-wide policy and coding rules
+4. **Inspect `copilot/agents/` and `copilot/skills/`** - See the active runtime assets in this template
+5. **Add project-specific docs under `documents/` as needed** - Capture build, test, and onboarding details for your project
 
 ## Documentation
 
-- **[documents/PROJECT.md](documents/PROJECT.md)** - Project overview and specifics
 - **[AGENTS.md](AGENTS.md)** - AI agent documentation (must-read!)
-- **[documents/QUICKSTART.md](documents/QUICKSTART.md)** - Quick start guide
-- **[documents/CHANGELOG.md](documents/CHANGELOG.md)** - Change history
-- **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Development guidelines
+- **[shared/copilot-instructions.md](shared/copilot-instructions.md)** - Source-of-truth development guidelines
+- **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Runtime mirror of the development guidelines
+- **`documents/`** - Location for project-specific guides, reports, and references
 
-## Reference Codes
+For runtime-owned customization work, check `copilot/skills/lifecycle-runtime-ops/SKILL.md` together with the lifecycle technical references under `documents/reference/technical/`: `runtime-path-contract.md`, `runtime-refresh-runbook.md`, `stale-cleanup-policy.md`, `orchestrator-responsibility-split-map.md`, `lifecycle-validation-guide.md`, plus `lifecycle-state-schema-guide.md` and `lifecycle-acceptance-checklist.md`.
 
-The `reference_codes/` directory stores **external code used as reference** during development.
+## Reference Repositories
+
+The `references/` directory stores **external code and repositories used as reference** during development.
 
 **Management Principles**:
 
@@ -227,7 +247,7 @@ The `reference_codes/` directory stores **external code used as reference** duri
 3. Reference code is read-only (no direct modifications)
 4. Regularly update or remove outdated references
 
-**See [documents/PROJECT.md](documents/PROJECT.md) for project-specific references.**
+**Use subdirectories under `references/` to organize project-specific external references.**
 
 ## Contributing
 
@@ -235,7 +255,7 @@ This is a template project. To use it:
 
 1. Clone or fork this repository
 2. Adapt the structure to your project type
-3. Update `documents/PROJECT.md` with your project details
+3. Add your project-specific guides under `documents/`
 4. Customize agents and skills as needed
 5. Remove this section and add your project-specific content
 
@@ -254,4 +274,4 @@ This is a template project. To use it:
 ---
 
 **Template Version**: 1.0.1  
-**Last Updated**: 2026-03-06
+**Last Updated**: 2026-04-18

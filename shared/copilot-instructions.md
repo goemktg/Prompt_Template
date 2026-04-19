@@ -109,6 +109,26 @@ Before taking any action (either tool calls _or_ responses to the user), you mus
 
 ## 0.2. Agent Interaction Protocol
 
+### Lifecycle-First Operating Model
+
+Repository-wide orchestration uses a common lifecycle vocabulary for non-trivial work: `INIT`, `ATOMIZE`, `PLAN`, `EXECUTE`, `REPORT`, `AWAIT`, `FINALIZE`.
+
+- `INIT`: establish the task frame and entry conditions.
+- `ATOMIZE`: decompose work into explicit units and dependencies.
+- `PLAN`: choose delegation paths, TODO artifacts, success criteria, and approval touchpoints.
+- `EXECUTE`: run approved specialist work through delegated subagents.
+- `REPORT`: summarize verified outcomes and the next expected action.
+- `AWAIT`: explicit non-executing wait state for approval, clarification, or external blockers.
+- `FINALIZE`: close the workflow or complete a terminal handoff.
+
+Policy rules for this lifecycle:
+
+- Approval gates are lifecycle boundary events. Use `PLAN -> AWAIT` before unapproved specialist `EXECUTE` work, or `REPORT -> AWAIT` after verified progress when further approval, clarification, or blocker resolution is required; do not hide approval waits inside continued execution.
+- During live execution, phase-boundary lifecycle writes are mandatory for `PLAN`, `REPORT`, `AWAIT`, and `FINALIZE`. When the main session enters one of those phases, it must invoke `scripts/write_lifecycle_transition.py` through `@executor` or the `lifecycle-runtime-ops` skill as part of the phase transition itself. This requirement applies both to direct specialist delegation and to flows that add an extra `@orchestrator` planning pass.
+- `AWAIT` is an explicit hold state, not background progress. While in `AWAIT`, do not continue delegated `EXECUTE` work until a new lifecycle transition is chosen.
+- Resume over restart is the default. Resume from the last valid phase when the objective and approved plan still hold, replan by returning to `PLAN` when new information changes the plan but not the objective, and restart from `INIT` only when the objective changes or prior state is no longer trustworthy.
+- Lifecycle-first orchestration remains the baseline for non-trivial work, and any narrower workflow-specific rules must fit within that phase model rather than replace it.
+
 ### Subagent Invocation Rules
 1.  **MUST USE** `runSubagent` to invoke specialized agents.
 2.  **NEVER** simulate agent outputs. Always invoke and wait for results.
@@ -125,9 +145,9 @@ The main session still operates in three distinct tiers. Each tier has a designa
 
 | Tier | Handler | Domain | Examples |
 |---|---|---|---|
-| **Tier 0** | Main session | Runtime control & lightweight answers | Orchestrator-owned pre-flight version check, skill detection, `0-INTENT` and `0-GATE` evaluation, direct specialist selection, todo/error recovery, **purely conversational** responses |
-| **Tier 1** | Main session | Interactive gates | Multi-turn user confirmation (`commit-skill`), step-by-step security review (`external-skill-generation`), user interrupts |
-| **Tier 2** | Subagent | All substantive work | Code, debugging, architecture, analysis, research, documentation, review, testing |
+| **Tier 0** | Main session | Runtime control & lightweight answers | Lifecycle coordination for `INIT`, `ATOMIZE`, `PLAN`, `REPORT`, and `FINALIZE`; pre-flight version check; skill detection; `0-INTENT` and `0-GATE` evaluation; direct specialist selection; todo/error recovery; **purely conversational** responses |
+| **Tier 1** | Main session | Interactive gates | Explicit `AWAIT` gates such as multi-turn user confirmation (`commit-skill`), step-by-step security review (`external-skill-generation`), and user interrupts |
+| **Tier 2** | Subagent | All substantive work | Specialist `EXECUTE` work: code, debugging, architecture, analysis, research, documentation, review, testing |
 
 **"Purely Conversational" — Tier 0 Carveout (ALL four must be true):**
 1. The response requires no file reads, code analysis, or codebase exploration.
@@ -236,32 +256,42 @@ Use `AGENTS.md § Available Agents` to map the task to the responsible agent, an
 
 > See **[AGENTS.md § Available Agents](../AGENTS.md)** for the task-type → agent mapping table, and **[AGENTS.md § Skill Routing](../AGENTS.md)** for skill execution mode.
 
-Use `@orchestrator` only when the orchestrator-first main session needs additional planning for multi-step sequencing, dependency ordering, or cross-domain coordination. The main session still handles direct 1:1 specialist routing for ordinary substantive tasks.
+Use `@orchestrator` only when the orchestrator-first main session needs a thin planning layer for multi-step sequencing, dependency ordering, resumable coordination, or cross-domain handoff shaping. The main session still handles direct 1:1 specialist routing for ordinary substantive tasks, and runtime sync/state/process enforcement remains owned by runtime-managed surfaces rather than the planning layer.
 
 #### 2.1) Additional Orchestrator Planning Support Protocol (Sequential)
 
-Within delegated execution, `@orchestrator` may be called for complex tasks. It produces the execution plan **and creates the TODO list directly** via `manage_todo_list`. Each TODO title follows the format `@agent-name: brief description`. Full per-step prompts are stored in Memory MCP under `step-N-prompt` tags.
+Within delegated execution, `@orchestrator` may be called when the main session needs extra planning support for sequencing and resumable coordination. It remains a thin `PLAN`-phase layer: it shapes the step order, emits plan artifacts, and **creates the TODO list directly** via `manage_todo_list`, but it does not own runtime sync/state/process enforcement. Each TODO title follows the format `@agent-name: brief description`. Full per-step prompts are stored in Memory MCP under `step-N-prompt` tags.
 
 **Main session execution loop** (after `@orchestrator` returns):
-1. Read the TODO list — each item's title is `@agent-name: task`.
-2. For the current `in-progress` TODO, retrieve the step prompt from Memory MCP (`tags: ["step-N-prompt"]`).
-3. Call `runSubagent(agentName=<agent>, prompt=<retrieved step prompt>)`.
-4. Mark the TODO `completed` immediately after the subagent returns.
-5. Mark the next TODO `in-progress` and repeat from step 2.
-6. If a subagent fails, mark the TODO `failed`, store failure context in Memory MCP, and re-invoke `@orchestrator` for replanning.
+1. Write the `PLAN` transition through `@executor` or the `lifecycle-runtime-ops` skill by invoking `scripts/write_lifecycle_transition.py` before beginning the planned execution loop.
+2. Read the TODO list — each item's title is `@agent-name: task`.
+3. For the current `in-progress` TODO, retrieve the step prompt from Memory MCP (`tags: ["step-N-prompt"]`).
+4. Call `runSubagent(agentName=<agent>, prompt=<retrieved step prompt>)`.
+5. Mark the TODO `completed` immediately after the subagent returns.
+6. Before any verified progress summary, write the `REPORT` transition through `@executor` or the `lifecycle-runtime-ops` skill by invoking `scripts/write_lifecycle_transition.py`.
+7. If the workflow pauses for approval, clarification, or blocker handling, write the `AWAIT` transition through `@executor` or the `lifecycle-runtime-ops` skill before pausing.
+8. If more work remains, mark the next TODO `in-progress` and repeat from step 3.
+9. When the task reaches terminal handoff or closure, write the `FINALIZE` transition through `@executor` or the `lifecycle-runtime-ops` skill before ending the workflow.
+10. If a subagent fails, mark the TODO `failed`, store failure context in Memory MCP, and re-invoke `@orchestrator` for replanning.
 
 **Context window optimization**: Each `runSubagent` call receives only its own step prompt (from Memory MCP), not the full orchestration text. The TODO list replaces free-text plan parsing.
 
 #### 2.2) Mandatory Todo For Multi-Step Resilience
-When additional `@orchestrator` planning support is used, the TODO list is created by the orchestrator — the main session must NOT recreate it. For direct delegations (no additional orchestrator planning pass), the main session creates TODOs normally.
+When additional `@orchestrator` planning support is used, the TODO list is created by the orchestrator as part of that thin planning layer — the main session must NOT recreate it. For direct delegations (no additional orchestrator planning pass), the main session creates TODOs normally.
 
-Preserve key findings from each completed step in Memory MCP so downstream agents have context. Detailed todo management belongs to the active orchestration protocol and owning skill instructions.
+For both patterns, the main session still owns the phase-boundary lifecycle writes for `PLAN`, `REPORT`, `AWAIT`, and `FINALIZE`. Those writes are not optional bookkeeping; they are mandatory runtime actions performed by invoking `scripts/write_lifecycle_transition.py` through `@executor` or the `lifecycle-runtime-ops` skill at the moment each phase boundary is crossed.
+
+Execution then proceeds through delegated `EXECUTE` work, followed by main-session `REPORT -> AWAIT` loops as needed, until the task can `FINALIZE`.
+
+Preserve key findings from each completed step in Memory MCP so downstream agents have context. Detailed todo management belongs to the active orchestration protocol and owning skill instructions, while sync/state/process enforcement belongs to runtime-owned surfaces.
 
 #### 3) Parallel Delegation
 If delegated subtasks are independent, they may run in parallel.
 
 #### 4) Orchestration Workflow
-When the direct-answer carveout does not apply, the orchestrator-first main session owns coordination boundaries and delegates specialist execution. Agent-specific execution behavior belongs to `AGENTS.md` and each agent definition.
+When the direct-answer carveout does not apply, the orchestrator-first main session owns coordination boundaries and delegates specialist execution. Additional `@orchestrator` use, when needed, stays a thin planning layer for sequencing and resumable coordination. Agent-specific execution behavior belongs to `AGENTS.md` and each agent definition, while runtime sync/state/process enforcement belongs to runtime-owned surfaces.
+
+During live execution, the main session records each `PLAN`, `REPORT`, `AWAIT`, and `FINALIZE` boundary by invoking `scripts/write_lifecycle_transition.py` through `@executor` or the `lifecycle-runtime-ops` skill as part of the orchestration protocol itself. This remains true when the main session delegates directly without an additional `@orchestrator` planning pass.
 
 🔴 **Main Session File-Edit Prohibition**: When operating as the orchestrator-first main session outside the direct-answer carveout, do **NOT** directly create, edit, or delete workspace files. All file mutations (code, documentation, configuration) remain the responsibility of the delegated specialist subagent. The main session may read files for routing and coordination, invoke `runSubagent`, and relay completion status.
 
@@ -336,45 +366,6 @@ User: "Add agent assignment to each step in orchestrator.agent.md."
 1.  **Multi-perspective Research**: Use multiple research methods when available
 2.  **External Verification**: Use Context7 MCP, ArXiv MCP, or web search
 3.  **Explicit Citation**: Must cite actual papers/documentation/sources
-
-### Large-Change Governance Workflow
-
-🔴 **MANDATORY FOR STRUCTURAL LARGE CHANGES**
-
-When a task meets the large-change threshold, the `large-change-governance` skill workflow must be invoked. This operationalizes the research-first mandate for repository-wide structural changes.
-
-**Threshold Triggers** (any apply):
-
-- Changes spanning 3+ files across 2+ directories
-- Estimated 50+ line modifications
-- Cross-domain changes (code + docs + config)
-- New workflow/policy introductions
-- Public interface or structural reorganization
-
-**Exemptions**:
-
-- Single-file typo or wording fixes
-- Isolated bug fixes in one module
-- Routine table/list updates under 20 lines
-
-**Workflow Phases** (must execute in order):
-
-| Phase | Handler | Gate |
-|-------|---------|------|
-| **RESEARCH** | Domain subagent | Report required in `documents/drafts/` |
-| **CONFIRM** | Main session (Tier 1) | Explicit user approval required |
-| **IMPLEMENT** | Domain subagent(s) | Per approved plan only |
-| **VERIFY** | `@doc-reviewer` + domain reviewer | Validation evidence required |
-
-**Integration with Delegation**:
-
-- Phase 1 and 3 delegate to domain specialists: `@master-prompt-writer` (prompts), `@architect` (code), `@doc-writer` (docs), or `@orchestrator` (multi-domain).
-- Phase 2 is an interactive gate — main session handles.
-- Phase 4 requires reviewer subagent invocation.
-
-**Override**: User may explicitly state "Override large-change governance" to bypass. Log with `[GOVERNANCE OVERRIDE]` tag.
-
-**Skill Reference**: See `copilot/skills/large-change-governance/SKILL.md` for full protocol.
 
 ---
 
@@ -652,6 +643,6 @@ Operational documentation workflow, safety rules, protected files, and deprecate
 
 Use this file for generic structure guidance only.
 For detailed repo structure, refer to `AGENTS.md`.
-Project-specific structure must be defined in `documents/PROJECT.md`
+Project-specific structure should be defined in repository-local documentation when needed.
 
 ---

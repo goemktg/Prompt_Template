@@ -2,7 +2,7 @@
 name: qa-regression-sentinel
 description: 'Execution-based quality verification. Runs tests, detects regressions, identifies flaky tests, and generates reproduction scripts. Triggers: run tests, check for regressions, flaky test, test reliability, regression check.'
 argument-hint: 'Provide code changes, test files, or failure logs. Examples: "Run tests after auth refactor", "Check for regressions in payment module", "Diagnose flaky test in CI"'
-model: Claude Opus 4.6
+model: Claude Sonnet 4.6 (copilot)
 user-invocable: false
 tools:
   - read

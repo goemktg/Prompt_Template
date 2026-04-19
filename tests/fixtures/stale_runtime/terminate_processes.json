@@ -1,0 +1,12 @@
+[
+  {
+    "pid": 3501,
+    "name": "python.exe",
+    "command_line_template": "python \"{plugin_root}/copilot/scripts/workspace_sync_server.py\""
+  },
+  {
+    "pid": 3502,
+    "name": "python.exe",
+    "command_line_template": "python \"{plugin_root}/copilot/scripts/helper.py\""
+  }
+]

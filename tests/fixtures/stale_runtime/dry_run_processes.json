@@ -1,0 +1,22 @@
+[
+  {
+    "pid": 2401,
+    "name": "python.exe",
+    "command_line_template": "python \"{plugin_root}/copilot/scripts/runtime_launcher.py\""
+  },
+  {
+    "pid": 2402,
+    "name": "python.exe",
+    "command_line_template": "python \"{tmpdir}/other-plugin/copilot/scripts/runtime_launcher.py\""
+  },
+  {
+    "pid": 2403,
+    "name": "python.exe",
+    "command_line_template": "python \"{plugin_root}/scripts/not_runtime.py\""
+  },
+  {
+    "pid": 2404,
+    "name": "node.exe",
+    "command_line_template": "node \"{plugin_root}/copilot/scripts/workspace_sync_server.py\""
+  }
+]

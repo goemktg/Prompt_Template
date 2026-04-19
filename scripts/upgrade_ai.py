@@ -22,6 +22,13 @@ from typing import cast
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from copilot.scripts.upgrade_state import UpgradeStateStore
+
+
 _SUPPLEMENTARY_MANIFEST_REL = Path("copilot") / "deploy-manifest.json"
 _FORBIDDEN_SUPPLEMENTARY_TARGETS = (
     Path("README.md"),
@@ -49,41 +56,11 @@ class TemplateUpgrader:
         self.source_root = self.repo_root
         self.target_root = (target_root or Path.cwd()).resolve()
         self.supplementary_manifest = self.source_root / _SUPPLEMENTARY_MANIFEST_REL
-        self.state_file = self.target_root / ".copilot-memory" / "upgrade_state.json"
+        self.state_store = UpgradeStateStore(self.target_root)
         self.ignore_delay = ignore_delay
 
-    def _ensure_state_dir(self) -> None:
-        self.state_file.parent.mkdir(parents=True, exist_ok=True)
-
-    def _load_state(self) -> Dict[str, Any]:
-        self._ensure_state_dir()
-        if not self.state_file.exists():
-            return {"schema_version": 1}
-        try:
-            with open(self.state_file, encoding="utf-8") as file_handle:
-                data = cast(object, json.load(file_handle))
-            if isinstance(data, dict):
-                state = cast(Dict[str, Any], data)
-                if "schema_version" not in state:
-                    state["schema_version"] = 1
-                return state
-        except (OSError, json.JSONDecodeError):
-            pass
-        return {"schema_version": 1}
-
-    def _save_state(self, state: Dict[str, Any]) -> None:
-        self._ensure_state_dir()
-        temp_file = self.state_file.with_suffix(".json.tmp")
-        with open(temp_file, "w", encoding="utf-8") as file_handle:
-            json.dump(state, file_handle, indent=2, sort_keys=True)
-        temp_file.replace(self.state_file)
-
     def save_last_exit_code(self, code: int) -> None:
-        state = self._load_state()
-        state["last_exit_code"] = code
-        if code == 0:
-            state["last_success_ts"] = datetime.now().timestamp()
-        self._save_state(state)
+        self.state_store.save_last_exit_code(code, timestamp=datetime.now().timestamp())
 
     def _resolve_target_relative_path(self, rel_path: str) -> Path:
         return self._resolve_relative_path(self.target_root, rel_path)
@@ -248,8 +225,9 @@ class TemplateUpgrader:
             return False
 
         backup_extension = manifest["syncPolicy"].get("backupExtension", ".bak")
-        state = self._load_state()
-        previous = state.get("supplementary_deploy", {}).get("entries", {})
+        state = self.state_store.load()
+        previous_state = state.get("supplementary_deploy")
+        previous = previous_state.get("entries", {}) if isinstance(previous_state, dict) else {}
         next_entries: Dict[str, Any] = {}
         synced = unchanged = deleted = 0
         sync_started_at = datetime.now().timestamp()
@@ -308,15 +286,14 @@ class TemplateUpgrader:
             print(f"ERROR: {error}")
             return False
 
-        state["supplementary_deploy"] = {
+        self.state_store.update_supplementary_deploy({
             "schema_version": manifest["schemaVersion"],
             "manifest": manifest_path.relative_to(source_root).as_posix(),
             "last_run_ts": sync_started_at,
             "source_root": str(self.source_root),
             "sync_policy": manifest["syncPolicy"],
             "entries": next_entries,
-        }
-        self._save_state(state)
+        })
         print(f"Done ({synced} updated, {unchanged} unchanged, {deleted} deleted)")
         return True
 
@@ -350,7 +327,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    repo_root = Path(__file__).parent.parent.resolve()
+    repo_root = REPO_ROOT
     target_root = Path(args.target).resolve() if args.target else Path.cwd().resolve()
     upgrader = TemplateUpgrader(repo_root, target_root=target_root)
 

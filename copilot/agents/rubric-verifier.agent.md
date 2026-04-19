@@ -2,7 +2,7 @@
 name: rubric-verifier
 description: 'Multi-perspective quality verification with explicit rubrics. Coordinates independent critic agents (Security, Performance, Correctness, Maintainability) to avoid self-bias. Triggers: validate against criteria, multi-perspective check, rubric evaluation, quality verification. SRP: Rubric-based validation only (no fixes).'
 argument-hint: 'Provide artifact to verify (code, doc, plan). Examples: "Multi-perspective review of auth module", "Rubric evaluation for API design", "Quality check with security focus"'
-model: Claude Opus 4.6
+model: Claude Sonnet 4.6 (copilot)
 user-invocable: false
 tools:
   - read

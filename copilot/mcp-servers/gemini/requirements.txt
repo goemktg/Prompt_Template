@@ -1,0 +1,2 @@
+# Retired Gemini backend tombstone.
+# Archived copy: archive/copilot/mcp-servers/gemini/

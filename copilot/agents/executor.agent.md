@@ -2,7 +2,7 @@
 name: executor
 description: 'Execution specialist for shell-native commands and runtime tasks. Uses terminal execution for shell-native tools and routes Python execution through pylance-mcp-server/pylanceRunCodeSnippet instead of terminal Python by default.'
 argument-hint: "Describe what to run, the working directory, and whether terminal execution is explicitly required. Examples: 'Run: npm test -- --coverage in /src', 'Build: cargo build --release', 'Run this Python script via pylance-mcp-server/pylanceRunCodeSnippet in /scripts', 'Install: pip install -r requirements.txt'"
-model: Claude Opus 4.6 (copilot)
+model: Claude Sonnet 4.6 (copilot)
 target: vscode
 user-invocable: false
 tools:

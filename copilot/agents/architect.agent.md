@@ -2,7 +2,7 @@
 name: architect
 description: 'System architecture design and technical solution planning. Designs component boundaries, validates architectural decisions, and coordinates with planners and generators. Triggers: design system, structure components, architecture decision, component boundary, where should X go.'
 argument-hint: 'Describe the system or feature to architect. Examples: "Design auth module structure", "Where should payment logic go?", "Component boundaries for user service"'
-model: Claude Opus 4.6
+model: Claude Sonnet 4.6 (copilot)
 user-invocable: false
 tools:
   - read

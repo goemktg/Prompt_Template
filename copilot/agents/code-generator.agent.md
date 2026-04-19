@@ -2,7 +2,7 @@
 name: code-generator
 description: 'Production code generation with pre-delivery validation and execution verification. Generates working, tested code from specifications. Triggers: implement X, add feature Y, write function, generate code, create module. SRP: Code generation with self-validation only (no planning or design).'
 argument-hint: "Provide requirements/spec. Examples: 'Implement user authentication', 'Add payment processing feature', 'Write rate limiting middleware'"
-model: Claude Opus 4.6 (copilot)
+model: Claude Sonnet 4.6 (copilot)
 target: vscode
 user-invocable: false
 tools:
