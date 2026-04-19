@@ -8,4 +8,6 @@ documents/final/*
 documents/drafts/*
 !documents/drafts/.gitkeep
 .DS_Store
-.github/
+.github/**
+!.github/plugin
+!.github/plugin/marketplace.json

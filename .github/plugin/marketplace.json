@@ -1,0 +1,23 @@
+{
+  "name": "prompt-template-marketplace",
+  "metadata": {
+    "description": "prompt-template plugin Marketplace.",
+    "version": "1.0.0"
+  },
+  "owner": {
+    "name": "goemktg",
+    "email": "samktg52@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "prompt-template",
+      "source": "./",
+      "description": "prompt-template plugin for GitHub Copilot.",
+      "version": "1.0.0",
+        "agents": "./copilot/agents/",
+        "skills": ["./copilot/skills/"],
+        "hooks": "./copilot/hooks.json",
+        "mcpServers": "./copilot/mcp.json"
+    }
+    ]
+}
