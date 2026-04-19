@@ -5,6 +5,16 @@
   "author": {
     "name": "goemktg"
   },
+  "repository": "https://github.com/goemktg/Prompt_Template",
+  "license": "MIT",
+  "keywords": [
+    "review",
+    "plan",
+    "feedback",
+    "markdown",
+    "annotation"
+  ],
+  "category": "productivity",
   "agents": "copilot/agents/",
   "skills": ["copilot/skills/"],
   "hooks": "copilot/hooks.json",
