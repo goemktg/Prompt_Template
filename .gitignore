@@ -11,3 +11,4 @@ documents/drafts/*
 .github/**
 !.github/plugin
 !.github/plugin/marketplace.json
+.pytest_cache/

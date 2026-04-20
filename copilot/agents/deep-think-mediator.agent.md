@@ -31,7 +31,7 @@ Own:
 
 Do not own:
 
-- Repository lifecycle control, TODO ownership, or runtime phase writes
+- Repository lifecycle control, TODO ownership, or any `session-gate/*` mutation
 - Direct user interaction, approval gates, or memory persistence
 - Final artifact selection or editorial presentation
 - Direct dispatch to `@dt-council-mediator`
@@ -83,6 +83,14 @@ deep_think_mediator_result:
 2. When protocol-local triage points to council reasoning, return the redirect package instead of dispatching a council layer directly.
 3. If a Gemini path is part of the imported protocol, use it only when the host environment provides native Gemini access outside the repo-owned runtime. This repository does not ship a local Gemini MCP backend. Otherwise, return `blocked` or the degraded result shape allowed by the imported protocol.
 4. If the imported protocol conflicts with repository-wide lifecycle ownership, preserve the repository boundary and return a blocked or narrowed result.
+
+## Hard Constraints
+
+- Never call `ask_user` or otherwise interact with the user. User-facing approval gates are orchestrator-only.
+- Never call or mutate `session-gate/*`. Lifecycle transitions, gate checks, checkpoints, and gate flags belong to `@orchestrator`.
+- Never persist state through `memory/*`. Return lesson candidates or partial context inline to the caller instead.
+- Never emit approval boundaries, pick canonical artifacts, or take over final reporting.
+- Never substitute independent analysis for a missing or failed deep-think protocol.
 
 ## Failure Handling
 

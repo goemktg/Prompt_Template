@@ -46,16 +46,20 @@ class MediatorRuntimeContractTests(unittest.TestCase):
             self.assertIn(expected_server, servers)
 
         session_gate = servers["session-gate"]
-        self.assertIn("copilot/mcp-servers/session-gate/server.py", session_gate["args"])
+        session_gate_args = " ".join(session_gate["args"])
+        self.assertIn("runtime_launcher.py", session_gate_args)
+        self.assertIn("sys.argv = [script, 'session-gate']", session_gate_args)
         self.assertIn("SESSION_GATE_STATE_DIR", session_gate["env"])
 
         context_manager = servers["context-manager"]
-        self.assertIn("copilot/mcp-servers/context-manager/server.py", context_manager["args"])
+        context_manager_args = " ".join(context_manager["args"])
+        self.assertIn("runtime_launcher.py", context_manager_args)
+        self.assertIn("sys.argv = [script, 'context-manager']", context_manager_args)
         self.assertIn("CONTEXT_MANAGER_BASE_DIR", context_manager["env"])
 
     def test_server_files_compile_and_export_expected_surfaces(self) -> None:
         expectations = {
-            "copilot/mcp-servers/session-gate/server.py": ("def phase_transition(", "def validate_transition("),
+            "copilot/mcp-servers/session-gate/server.py": ("def phase_transition(", "def check_gate("),
             "copilot/mcp-servers/context-manager/server.py": ("def store_result(", "def retrieve_result("),
         }
         for relative_path, expected_fragments in expectations.items():

@@ -1,2 +1,0 @@
-# Archived: this repository now relies on native Gemini access instead of a local Gemini MCP backend.
-mcp>=1.0.0

@@ -34,7 +34,7 @@ This is a universal project template designed for various types of development p
 - **Infrastructure**: Standardized logging, task tracking, and dynamic context maintenance
 - **Flexibility**: Adaptable to software development, research, mod development, and more
 
-Repository-wide coordination follows a lifecycle-first operating model: `INIT -> ATOMIZE -> PLAN -> EXECUTE -> REPORT -> AWAIT -> FINALIZE`. The orchestrator-first main session owns coordination boundaries, while specialist agents perform substantive `EXECUTE` work. Mediator or council-style mechanisms are optional protocol overlays, not the default baseline.
+Repository-wide coordination follows a lifecycle-first operating model: `INIT -> ATOMIZE -> PLAN -> EXECUTE -> REPORT -> AWAIT -> FINALIZE`. The orchestrator-first main session owns coordination boundaries directly through `session-gate` transitions, checks, checkpoints, and gate flags, while specialist agents perform substantive `EXECUTE` work. Mediator or council-style mechanisms are optional protocol overlays, not the default baseline.
 
 ## Repository Structure
 
@@ -196,7 +196,7 @@ description: 'Description of the skill and when it should be loaded.'
 
 This section is the single source of truth for skill-to-execution mapping. The main prompt should detect that a skill applies, then consult this section instead of embedding the full routing table inline.
 
-Baseline operating model: repository-wide orchestration follows `INIT -> ATOMIZE -> PLAN -> EXECUTE -> REPORT -> AWAIT -> FINALIZE`. Skill routing plugs specialists and overlays into that lifecycle; it does not replace the lifecycle itself.
+Baseline operating model: repository-wide orchestration follows `INIT -> ATOMIZE -> PLAN -> EXECUTE -> REPORT -> AWAIT -> FINALIZE`. The orchestrator records and enforces that loop through direct `session-gate` authority. Skill routing plugs specialists and overlays into that lifecycle; it does not replace the lifecycle itself.
 
 Current implementation order: lifecycle first by default, with implemented mediator and council overlays available as explicit protocol hops when a task calls for them and the relevant protocol assets/runtime backends are present.
 
@@ -209,7 +209,6 @@ Current implementation order: lifecycle first by default, with implemented media
 | `deep-think` | deep-think, multi-hypothesis reasoning, structured refinement, mediator triage | **Delegate → `@deep-think-mediator` (Tier 2)** | Uses the implemented mediator-first deep-think overlay when the task explicitly calls for that reasoning protocol. |
 | `data-analysis` | analyze results, compare metrics | **Delegate → `search_subagent` (built-in) + main agent (Tier 2)** | Substantive work; exploration + synthesis pattern |
 | `dt-council` | dt-council, model council, diverse perspectives, mediator redirect | **Delegate → `@dt-council-mediator` (Tier 2)** | Uses the implemented council mediator overlay for explicit multi-perspective council protocol work. |
-| `lifecycle-runtime-ops` | verify runtime activation, write lifecycle transition, hydrate lifecycle state, refresh runtime, cleanup runtime artifacts | **Delegate → `@executor` (Tier 2)** | Operational protocol runs existing repo-local runtime scripts and bounded workspace-state checks without widening scope |
 | `skill-extension` | create new skill, new SKILL.md | **Delegate → `@code-generator` (Tier 2)** | Substantive work; structured file generation |
 | `external-skill-generation` | import external skill | **Tier 1 gate + Tier 2 delegation** | Security review gates (steps 1, 3, 6) run in main session (Tier 1). Substantive extraction and rewrite (steps 2, 4, 5) delegate to `@code-generator` via `runSubagent`. Main session holds approval authority between phases. |
 | `paper-catalog-update` | update prompt paper catalog, run catalog update procedure, improve catalog update procedure | **Delegate → `@master-prompt-writer` (Tier 2)** | Substantive work; maintains the paper catalog and supports prompt planning from curated papers |
@@ -235,9 +234,9 @@ Use this table to identify which agent to call for each task type. When multiple
 
 | Task Type | Agent | Description | Example Triggers |
 | :--- | :--- | :--- | :--- |
-| **Complex orchestration** | `@orchestrator` | Thin lifecycle coordination contract for the orchestrator-first main session. It frames work, sequences specialists, emits delegation/TODO artifacts, and keeps `AWAIT` and resumable progress explicit, while substantive `EXECUTE` work stays with specialist subagents. Runtime sync/state enforcement belongs to runtime-owned surfaces, not the agent file. | "plan this", "multi-phase task", "coordinate agents" |
-| **Deep-think protocol mediation** | `@deep-think-mediator` | Thin protocol hop between `@orchestrator` and an available deep-think reasoning asset. It hosts protocol-local sequencing, returns normalized results, and can emit redirect metadata for council escalation without becoming a shadow orchestrator. | "deep-think this", "multi-hypothesis reasoning", "escalate to deep analysis" |
-| **Council protocol mediation** | `@dt-council-mediator` | Thin protocol hop between `@orchestrator` and an available council reasoning asset. It keeps council-local sequencing and synthesis packaging out of the orchestrator while preserving lifecycle-first control in the caller. | "run council analysis", "extended council reasoning", "cross-model council" |
+| **Complex orchestration** | `@orchestrator` | Thin lifecycle coordination contract for the orchestrator-first main session. It frames work, sequences specialists, emits delegation/TODO artifacts, and keeps `AWAIT` and resumable progress explicit through direct `session-gate` transitions, checks, checkpoints, and gate flags, while substantive `EXECUTE` work stays with specialist subagents. | "plan this", "multi-phase task", "coordinate agents" |
+| **Deep-think protocol mediation** | `@deep-think-mediator` | Thin protocol hop between `@orchestrator` and an available deep-think reasoning asset. It hosts protocol-local sequencing, returns normalized results, and can emit redirect metadata for council escalation without becoming a shadow orchestrator or mutating lifecycle state. | "deep-think this", "multi-hypothesis reasoning", "escalate to deep analysis" |
+| **Council protocol mediation** | `@dt-council-mediator` | Thin protocol hop between `@orchestrator` and an available council reasoning asset. It keeps council-local sequencing and synthesis packaging out of the orchestrator while preserving orchestrator-only lifecycle authority. | "run council analysis", "extended council reasoning", "cross-model council" |
 | **New code / feature implementation** | `@code-generator` | Code generation with best practices and type safety. | "implement X", "add feature Y", "write a function for Z" |
 | **Bug / error / failure diagnosis & fix** | `@fixer` | Autonomous problem-solving & execution agent. Diagnoses issues, implements fixes, executes code/tests, and verifies solutions. | "fix this", "error in", "not working", "debug" |
 | **Architecture / design planning** | `@architect` | Architecture Planner. Designs system architecture and technical solutions. | "design", "how should I structure", "best approach for" |
@@ -269,8 +268,8 @@ These agents extend the repository with optional mediator layers while keeping l
 
 | Agent | File | Role |
 | :--- | :--- | :--- |
-| `@deep-think-mediator` | `copilot/agents/deep-think-mediator.agent.md` | First-hop mediator for deep-think-style protocol execution. Returns either normalized deep-think results or redirect metadata for council escalation, and uses a Gemini-family runtime path only when the host environment provides native Gemini access outside the repo-owned runtime. |
-| `@dt-council-mediator` | `copilot/agents/dt-council-mediator.agent.md` | Council-local mediator that sequences an available council protocol without taking over lifecycle ownership from `@orchestrator`, and uses a Gemini-family runtime path only when the host environment provides native Gemini access outside the repo-owned runtime. |
+| `@deep-think-mediator` | `copilot/agents/deep-think-mediator.agent.md` | First-hop mediator for deep-think-style protocol execution. Returns either normalized deep-think results or redirect metadata for council escalation, uses a Gemini-family runtime path only when the host environment provides native Gemini access outside the repo-owned runtime, and never mutates `session-gate` state. |
+| `@dt-council-mediator` | `copilot/agents/dt-council-mediator.agent.md` | Council-local mediator that sequences an available council protocol without taking over lifecycle ownership from `@orchestrator`, uses a Gemini-family runtime path only when the host environment provides native Gemini access outside the repo-owned runtime, and never mutates `session-gate` state. |
 
 ## Available Skills
 
@@ -282,14 +281,13 @@ These agents extend the repository with optional mediator layers while keeping l
 | `deep-think` | Mediator-first deep reasoning workflow for explicit deep-think protocol tasks | **Delegate → `@deep-think-mediator`** |
 | `data-analysis` | Result visualization and statistical comparison | **Delegate → `search_subagent` (built-in) + main agent** |
 | `dt-council` | Mediator-first multi-perspective council workflow for explicit council protocol tasks | **Delegate → `@dt-council-mediator`** |
-| `lifecycle-runtime-ops` | Repeatable lifecycle runtime operations using existing repo-local verification, state, refresh, and cleanup scripts | **Delegate → `@executor`** |
 | `skill-extension` | Create and extend agent skills | **Delegate → `@code-generator`** |
 | `paper-catalog-update` | Monthly update workflow for prompt engineering paper catalog (freshness check, scoring, add/retire, metadata sync) | **Delegate → `@master-prompt-writer`** |
 | `external-skill-generation` | Generate skills from external documentation | **Tier 1 gate + Tier 2 delegation** (`@code-generator` for extraction/rewrite phases) |
 | `commit-skill` | Commit workflow with diff-based message generation and explicit user confirmation gate before `git commit` | **Main agent direct** (interactive gate) |
 | `copilot-eval-benchmark` | Semi-automated scoring workflow for customized local Copilot, including optional SWE-bench Verified task import | **Main agent direct (Tier 1/2 hybrid; no SKILL.md file)** |
 
-Lifecycle-first orchestration remains the default. Mediator and council overlays are implemented as explicit optional protocol layers, not universal routing, and are used only when the relevant protocol assets and runtime backends are present.
+Lifecycle-first orchestration remains the default. The active lifecycle authority is the orchestrator's direct `session-gate` usage, while mediator and council overlays remain explicit optional protocol layers rather than universal routing.
 
 ## Adding Custom Agents
 

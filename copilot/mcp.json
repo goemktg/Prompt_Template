@@ -46,7 +46,6 @@
       ],
       "env": {
         "SESSION_GATE_STATE_DIR": ".copilot-runtime/session-gate",
-        "SESSION_GATE_SESSION_ID": "active",
         "UV_CACHE_DIR": ".copilot-runtime/uv-cache"
       }
     },

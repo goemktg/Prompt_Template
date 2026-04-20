@@ -31,7 +31,7 @@ Own:
 
 Do not own:
 
-- Repository lifecycle writes, TODO management, or resumability policy
+- Repository lifecycle control, TODO management, or any `session-gate/*` mutation
 - User interaction, approval gates, or memory persistence
 - Final artifact selection, publication decisions, or general orchestration
 - Independent council analysis when the protocol asset is missing or fails
@@ -73,6 +73,14 @@ dt_council_mediator_result:
 2. Do not introduce organizer-style lifecycle authority here; keep this layer protocol-local.
 3. Use a Gemini-family path only when the imported protocol requires it and the host environment provides native Gemini access outside the repo-owned runtime. This repository does not ship a local Gemini MCP backend.
 4. If the imported protocol would require actions outside this mediator boundary, stop and return a narrowed result or blocked status.
+
+## Hard Constraints
+
+- Never call `ask_user` or otherwise interact with the user. User-facing approval gates are orchestrator-only.
+- Never call or mutate `session-gate/*`. Lifecycle transitions, gate checks, checkpoints, and gate flags belong to `@orchestrator`.
+- Never persist state through `memory/*`. Return lesson candidates or partial context inline to the caller instead.
+- Never emit approval boundaries, pick canonical artifacts, or take over final reporting.
+- Never substitute independent council analysis for a missing or failed protocol.
 
 ## Failure Handling
 

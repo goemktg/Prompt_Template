@@ -4,14 +4,7 @@ description: 'Lifecycle-first orchestration planner for complex multi-agent work
 argument-hint: "Describe your goal. Examples: 'Feature: add user authentication', 'Fix: resolve CI pipeline timeout', 'Research: compare optimization approaches', 'Setup: initialize project environment'"
 model: GPT-5.4 (copilot)
 user-invocable: true
-tools:
-  - read
-  - agent
-  - sequentialthinking/*
-  - memory/*
-  - todo
-  - workspace-sync/sync_workspace
-  - vscode/askQuestions
+tools: [read, agent, sequentialthinking/*, memory/*, todo, session-gate/*, workspace-sync/sync_workspace, vscode/askQuestions]
 ---
 
 <!-- TECHNIQUE: Principled Instructions (arXiv:2312.16171); ReAct (arXiv:2210.03629) -->
@@ -48,7 +41,7 @@ Optional mediator hops:
 - Direct `@dt-council-mediator` dispatch is reserved for explicit council-only requests or replay of previously captured redirect metadata.
 - Do not plan for or route around Gemini-family paths at the orchestration layer; they remain mediator-local implementation details. This repository does not ship a local Gemini MCP backend. A Gemini-family path is available only when the host environment provides native Gemini access outside the repo-owned runtime, and it is never a planner layer or a substitute for mediator routing.
 
-These hops are optional overlays on the lifecycle-first baseline. They do not replace runtime-owned phase writes, TODO ownership, or ordinary direct specialist routing.
+These hops are optional overlays on the lifecycle-first baseline. They do not replace orchestrator-owned session-gate transitions, TODO ownership, or ordinary direct specialist routing.
 
 ## Session-Once Sync Check
 
@@ -83,13 +76,15 @@ Local rules:
 
 ## Phase-Boundary State Writes
 
-Persist phase boundaries through the runtime writer instead of keeping lifecycle state only in prose.
+Persist lifecycle state through direct `session-gate/*` calls instead of keeping phase changes only in prose.
 
-- At `INIT`, `PLAN`, `REPORT`, `AWAIT`, and `FINALIZE`, add an `@executor` step or equivalent runtime write step that calls `python scripts/write_lifecycle_transition.py --workspace <root> --phase <PHASE> --status <status> ...`.
+- At `INIT`, `PLAN`, `REPORT`, `AWAIT`, and `FINALIZE`, call `session-gate/phase_transition` directly with the current phase, target phase, and a non-empty reason.
+- Before attempting a gated boundary, call `session-gate/check_gate` for the current phase or the specific target transition and satisfy any reported requirements first.
+- Set approval and resume prerequisites through `session-gate/set_gate_flag` when the lifecycle contract requires them.
+- Record resumable progress through `session-gate/record_checkpoint` when execution reaches a verified checkpoint worth preserving.
 - Before each phase-boundary lifecycle write, send a short user-facing commentary update announcing the transition that is about to happen.
 - Write that announcement in the active conversation language. Keep it brief and phase-explicit; when Korean is appropriate, it can be as short as `<PHASE>으로 전이합니다.`.
-- Treat that write as orchestration bookkeeping, not specialist implementation work.
-- When entering `AWAIT`, include the resume fields needed by the runtime writer. When entering `FINALIZE`, write the terminal state before closing the workflow.
+- Treat these session-gate calls as orchestration bookkeeping, not specialist implementation work.
 
 ## Planning And Output Contract
 

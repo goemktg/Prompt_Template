@@ -2,7 +2,7 @@
 
 **작성일:** 2026-04-16
 **상태:** Active
-**관련 스펙:** [temple-run-instruction-mediator-implementation.md](../../drafts/temple-run-instruction-mediator-implementation.md)
+**관련 스펙:** [temple-run-instruction-mediator-implementation.md](../../../archive/documents/drafts/temple-run-instruction-mediator-implementation.md)
 
 ## 1. 문서 목적
 

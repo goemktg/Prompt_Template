@@ -15,7 +15,7 @@ A standardized template for **any software development project** with **GitHub C
 
 ## Operating Model
 
-This template currently uses a lifecycle-first operating model for non-trivial AI work: `INIT -> ATOMIZE -> PLAN -> EXECUTE -> REPORT -> AWAIT -> FINALIZE`. In practice, the orchestrator coordinates task boundaries and specialist agents handle substantive execution.
+This template currently uses a lifecycle-first operating model for non-trivial AI work: `INIT -> ATOMIZE -> PLAN -> EXECUTE -> REPORT -> AWAIT -> FINALIZE`. In practice, `session-gate` is the lifecycle authority, hooks enforce phase behavior, the orchestrator coordinates task boundaries, and specialist agents handle substantive execution.
 
 ## Quick Start
 
@@ -112,12 +112,11 @@ Agent Skills are specialized workflows automatically loaded by Copilot:
 | `deep-think` | Optional mediator-first deep reasoning workflow |
 | `data-analysis` | Result visualization and statistical comparison |
 | `dt-council` | Optional mediator-first multi-perspective council workflow |
-| `lifecycle-runtime-ops` | Verify runtime activation, write lifecycle transitions, and check refresh or cleanup state |
 | `skill-extension` | Create and extend agent skills |
 | `external-skill-generation` | Generate skills from external documentation |
 | `paper-catalog-update` | Refresh the prompt engineering paper catalog |
 
-The baseline path is lifecycle-first orchestration, and mediator or council-style coordination is available as optional explicit overlays rather than the universal default. This repository does not ship a local Gemini MCP backend. If a mediator protocol expects a Gemini-family path, it should use host-provided native Gemini access when available and otherwise return a blocked or degraded result.
+The baseline path is direct lifecycle-first orchestration through `session-gate` with hook-enforced phase behavior, and mediator or council-style coordination is available as optional explicit overlays rather than the universal default. This repository does not ship a local Gemini MCP backend. If a mediator protocol expects a Gemini-family path, it should use host-provided native Gemini access when available and otherwise return a blocked or degraded result.
 
 **See [AGENTS.md](AGENTS.md) for usage examples.**
 
@@ -209,7 +208,7 @@ Use **Memory MCP** (`mcp_memory_*` tools) for transient data:
 1. **Add project-specific docs under `documents/`** - Capture structure, build, and workflow details for your project
 2. **Configure `shared/copilot-instructions.md`** - Set coding standards, then sync `.github/copilot-instructions.md`
 3. **Add custom agents** - Create `copilot/agents/<name>.agent.md`
-4. **Create skills** - Add `copilot/skills/<name>/SKILL.md`; use `copilot/skills/lifecycle-runtime-ops/SKILL.md` as the runtime-operations reference when adjusting activation, transition, refresh, or cleanup procedures
+4. **Create skills** - Add `copilot/skills/<name>/SKILL.md`; for runtime activation, transition, refresh, or cleanup changes, follow the lifecycle technical references and active `session-gate` plus hook path
 5. **Update AGENTS.md** - Document your custom agents
 
 ## Getting Started
@@ -229,7 +228,7 @@ Use **Memory MCP** (`mcp_memory_*` tools) for transient data:
 - **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Runtime mirror of the development guidelines
 - **`documents/`** - Location for project-specific guides, reports, and references
 
-For runtime-owned customization work, check `copilot/skills/lifecycle-runtime-ops/SKILL.md` together with the lifecycle technical references under `documents/reference/technical/`: `runtime-path-contract.md`, `runtime-refresh-runbook.md`, `stale-cleanup-policy.md`, `orchestrator-responsibility-split-map.md`, `lifecycle-validation-guide.md`, plus `lifecycle-state-schema-guide.md` and `lifecycle-acceptance-checklist.md`.
+For runtime-owned customization work, use the lifecycle technical references under `documents/reference/technical/`: `runtime-path-contract.md`, `runtime-refresh-runbook.md`, `stale-cleanup-policy.md`, `orchestrator-responsibility-split-map.md`, `lifecycle-validation-guide.md`, plus `lifecycle-state-schema-guide.md` and `lifecycle-acceptance-checklist.md`. The active adoption path uses direct `session-gate` orchestration with hook-enforced phase behavior; legacy `lifecycle-runtime-ops` and `scripts/write_lifecycle_transition.py` are not part of that path.
 
 ## Reference Repositories
 

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""preCompact hook: persist a compact-safe continuity marker."""
+"""preCompact hook: write a compact-safe checkpoint marker to the session state directory."""
 
 from __future__ import annotations
 
+import json
+import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -11,25 +14,28 @@ SCRIPTS_DIR = Path(__file__).resolve().parent / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from _lifecycle_hook_common import UNCHANGED, load_payload, update_lifecycle_state  # noqa: E402
+from session_state import resolve_session_state_dir  # noqa: E402
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def main() -> int:
     try:
-        payload = load_payload()
-        update_lifecycle_state(
-            payload,
-            current_phase=UNCHANGED,
-            status=UNCHANGED,
-            active_task=UNCHANGED,
-            continuity_updates={
-                "last_event": "preCompact",
-                "last_compaction_checkpoint": True,
-                "compact_safe": True,
-            },
-        )
+        session_dir = resolve_session_state_dir()
+        compact_marker = session_dir / "compact-checkpoint.json"
+        os.makedirs(session_dir, exist_ok=True)
+        marker = {
+            "event": "preCompact",
+            "ts": _now_iso(),
+            "compact_safe": True,
+        }
+        with compact_marker.open("w", encoding="utf-8") as fh:
+            json.dump(marker, fh, ensure_ascii=False)
+            fh.write("\n")
     except Exception:
-        return 0
+        pass
     return 0
 
 

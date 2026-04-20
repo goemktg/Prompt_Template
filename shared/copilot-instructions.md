@@ -124,7 +124,7 @@ Repository-wide orchestration uses a common lifecycle vocabulary for non-trivial
 Policy rules for this lifecycle:
 
 - Approval gates are lifecycle boundary events. Use `PLAN -> AWAIT` before unapproved specialist `EXECUTE` work, or `REPORT -> AWAIT` after verified progress when further approval, clarification, or blocker resolution is required; do not hide approval waits inside continued execution.
-- During live execution, phase-boundary lifecycle writes are mandatory for `PLAN`, `REPORT`, `AWAIT`, and `FINALIZE`. When the main session enters one of those phases, it must invoke `scripts/write_lifecycle_transition.py` through `@executor` or the `lifecycle-runtime-ops` skill as part of the phase transition itself. This requirement applies both to direct specialist delegation and to flows that add an extra `@orchestrator` planning pass.
+- During live execution, phase-boundary lifecycle writes are mandatory for `PLAN`, `REPORT`, `AWAIT`, and `FINALIZE`. When the main session enters one of those phases, it must call `session-gate/phase_transition` directly as part of that boundary and use `session-gate/check_gate`, `session-gate/set_gate_flag`, and `session-gate/record_checkpoint` as needed to satisfy the gate contract. This requirement applies both to direct specialist delegation and to flows that add an extra `@orchestrator` planning pass.
 - `AWAIT` is an explicit hold state, not background progress. While in `AWAIT`, do not continue delegated `EXECUTE` work until a new lifecycle transition is chosen.
 - Resume over restart is the default. Resume from the last valid phase when the objective and approved plan still hold, replan by returning to `PLAN` when new information changes the plan but not the objective, and restart from `INIT` only when the objective changes or prior state is no longer trustworthy.
 - Lifecycle-first orchestration remains the baseline for non-trivial work, and any narrower workflow-specific rules must fit within that phase model rather than replace it.
@@ -263,15 +263,15 @@ Use `@orchestrator` only when the orchestrator-first main session needs a thin p
 Within delegated execution, `@orchestrator` may be called when the main session needs extra planning support for sequencing and resumable coordination. It remains a thin `PLAN`-phase layer: it shapes the step order, emits plan artifacts, and **creates the TODO list directly** via `manage_todo_list`, but it does not own runtime sync/state/process enforcement. Each TODO title follows the format `@agent-name: brief description`. Full per-step prompts are stored in Memory MCP under `step-N-prompt` tags.
 
 **Main session execution loop** (after `@orchestrator` returns):
-1. Write the `PLAN` transition through `@executor` or the `lifecycle-runtime-ops` skill by invoking `scripts/write_lifecycle_transition.py` before beginning the planned execution loop.
+1. Write the `PLAN` transition through direct `session-gate/phase_transition` usage before beginning the planned execution loop.
 2. Read the TODO list — each item's title is `@agent-name: task`.
 3. For the current `in-progress` TODO, retrieve the step prompt from Memory MCP (`tags: ["step-N-prompt"]`).
 4. Call `runSubagent(agentName=<agent>, prompt=<retrieved step prompt>)`.
 5. Mark the TODO `completed` immediately after the subagent returns.
-6. Before any verified progress summary, write the `REPORT` transition through `@executor` or the `lifecycle-runtime-ops` skill by invoking `scripts/write_lifecycle_transition.py`.
-7. If the workflow pauses for approval, clarification, or blocker handling, write the `AWAIT` transition through `@executor` or the `lifecycle-runtime-ops` skill before pausing.
+6. Before any verified progress summary, write the `REPORT` transition through direct `session-gate/phase_transition` usage.
+7. If the workflow pauses for approval, clarification, or blocker handling, write the `AWAIT` transition through direct `session-gate/phase_transition` usage before pausing.
 8. If more work remains, mark the next TODO `in-progress` and repeat from step 3.
-9. When the task reaches terminal handoff or closure, write the `FINALIZE` transition through `@executor` or the `lifecycle-runtime-ops` skill before ending the workflow.
+9. When the task reaches terminal handoff or closure, write the `FINALIZE` transition through direct `session-gate/phase_transition` usage before ending the workflow.
 10. If a subagent fails, mark the TODO `failed`, store failure context in Memory MCP, and re-invoke `@orchestrator` for replanning.
 
 **Context window optimization**: Each `runSubagent` call receives only its own step prompt (from Memory MCP), not the full orchestration text. The TODO list replaces free-text plan parsing.
@@ -279,7 +279,7 @@ Within delegated execution, `@orchestrator` may be called when the main session 
 #### 2.2) Mandatory Todo For Multi-Step Resilience
 When additional `@orchestrator` planning support is used, the TODO list is created by the orchestrator as part of that thin planning layer — the main session must NOT recreate it. For direct delegations (no additional orchestrator planning pass), the main session creates TODOs normally.
 
-For both patterns, the main session still owns the phase-boundary lifecycle writes for `PLAN`, `REPORT`, `AWAIT`, and `FINALIZE`. Those writes are not optional bookkeeping; they are mandatory runtime actions performed by invoking `scripts/write_lifecycle_transition.py` through `@executor` or the `lifecycle-runtime-ops` skill at the moment each phase boundary is crossed.
+For both patterns, the main session still owns the phase-boundary lifecycle writes for `PLAN`, `REPORT`, `AWAIT`, and `FINALIZE`. Those writes are not optional bookkeeping; they are mandatory session-gate actions performed through direct `session-gate/phase_transition` usage at the moment each phase boundary is crossed, with `session-gate/check_gate`, `session-gate/set_gate_flag`, and `session-gate/record_checkpoint` used whenever the transition contract requires them.
 
 Execution then proceeds through delegated `EXECUTE` work, followed by main-session `REPORT -> AWAIT` loops as needed, until the task can `FINALIZE`.
 
@@ -291,7 +291,7 @@ If delegated subtasks are independent, they may run in parallel.
 #### 4) Orchestration Workflow
 When the direct-answer carveout does not apply, the orchestrator-first main session owns coordination boundaries and delegates specialist execution. Additional `@orchestrator` use, when needed, stays a thin planning layer for sequencing and resumable coordination. Agent-specific execution behavior belongs to `AGENTS.md` and each agent definition, while runtime sync/state/process enforcement belongs to runtime-owned surfaces.
 
-During live execution, the main session records each `PLAN`, `REPORT`, `AWAIT`, and `FINALIZE` boundary by invoking `scripts/write_lifecycle_transition.py` through `@executor` or the `lifecycle-runtime-ops` skill as part of the orchestration protocol itself. This remains true when the main session delegates directly without an additional `@orchestrator` planning pass.
+During live execution, the main session records each `PLAN`, `REPORT`, `AWAIT`, and `FINALIZE` boundary through direct `session-gate/phase_transition` calls as part of the orchestration protocol itself. This remains true when the main session delegates directly without an additional `@orchestrator` planning pass.
 
 🔴 **Main Session File-Edit Prohibition**: When operating as the orchestrator-first main session outside the direct-answer carveout, do **NOT** directly create, edit, or delete workspace files. All file mutations (code, documentation, configuration) remain the responsibility of the delegated specialist subagent. The main session may read files for routing and coordination, invoke `runSubagent`, and relay completion status.
 

@@ -17,6 +17,14 @@
         "timeoutSec": 10
       }
     ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "python scripts/unified-pre-hook.py",
+        "cwd": "copilot/hooks",
+        "timeoutSec": 5
+      }
+    ],
     "preCompact": [
       {
         "type": "command",

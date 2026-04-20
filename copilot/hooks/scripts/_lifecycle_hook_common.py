@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared helpers for minimal lifecycle hook state updates."""
+"""Shared helpers for hook payload resolution and session-gate file access."""
 
 from __future__ import annotations
 
@@ -11,12 +11,15 @@ from typing import Any
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[3]
 COPILOT_SCRIPTS_DIR = PLUGIN_ROOT / "copilot" / "scripts"
+_HOOK_SCRIPTS_DIR = Path(__file__).resolve().parent
 
 if str(COPILOT_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(COPILOT_SCRIPTS_DIR))
+if str(_HOOK_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_HOOK_SCRIPTS_DIR))
 
 from runtime_root import find_plugin_root  # type: ignore  # noqa: E402
-from upgrade_state import UpgradeStateStore  # type: ignore  # noqa: E402
+from session_state import resolve_session_state_dir  # noqa: E402
 
 
 WORKSPACE_KEYS = (
@@ -129,15 +132,6 @@ def resolve_workspace_root_from_payload(payload: dict[str, Any]) -> Path | None:
     return None
 
 
-def current_continuity(store: UpgradeStateStore) -> dict[str, Any]:
-    state = store.load()
-    lifecycle_state = state.get("lifecycle_state")
-    if not isinstance(lifecycle_state, dict):
-        return {}
-    continuity = lifecycle_state.get("continuity")
-    return dict(continuity) if isinstance(continuity, dict) else {}
-
-
 def extract_metadata(payload: dict[str, Any], workspace_root: Path) -> dict[str, Any]:
     metadata: dict[str, Any] = {
         "workspace_root": str(workspace_root),
@@ -160,30 +154,6 @@ def extract_metadata(payload: dict[str, Any], workspace_root: Path) -> dict[str,
     return metadata
 
 
-def update_lifecycle_state(
-    payload: dict[str, Any],
-    *,
-    current_phase: str | None | object,
-    status: str | object,
-    active_task: str | None | object,
-    continuity_updates: dict[str, Any],
-    reset_continuity: bool = False,
-) -> Path:
-    workspace_root = resolve_workspace_root(payload)
-    store = UpgradeStateStore(workspace_root)
-    state = store.load()
-    lifecycle_state = state.get("lifecycle_state")
-    current_state = dict(lifecycle_state) if isinstance(lifecycle_state, dict) else {}
-    continuity = {} if reset_continuity else current_continuity(store)
-    continuity.update(continuity_updates)
-    continuity.update(extract_metadata(payload, workspace_root))
-    store.update_lifecycle_state(
-        active_task=current_state.get("active_task") if active_task is UNCHANGED else active_task,
-        approval_pending=False,
-        await_context=None,
-        continuity=continuity,
-        current_phase=current_state.get("current_phase") if current_phase is UNCHANGED else current_phase,
-        current_plan_hash=None,
-        status=current_state.get("status", "idle") if status is UNCHANGED else status,
-    )
-    return workspace_root
+def resolve_session_gate_state_file() -> Path:
+    """Return the gate-state.json path for the active session directory."""
+    return resolve_session_state_dir() / "gate-state.json"
