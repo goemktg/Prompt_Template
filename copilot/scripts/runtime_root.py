@@ -14,6 +14,7 @@ DEFAULT_SKIP_DIRS = {"AppData", ".git", "node_modules", ".venv", "__pycache__"}
 WINDOWS_VSCODE_PRODUCTS = ("Code", "Code - Insiders")
 MACOS_VSCODE_PRODUCTS = ("Code", "Code - Insiders")
 LINUX_VSCODE_PRODUCTS = ("Code", "Code - Insiders")
+VSCODE_HOME_PLUGIN_DIRS = (".vscode/agent-plugins", ".vscode-insiders/agent-plugins")
 
 
 def _has_markers(path: str, required_markers: tuple[str, ...]) -> bool:
@@ -209,6 +210,10 @@ def _iter_agent_plugin_bases() -> tuple[str, ...]:
                 "agentPlugins",
             )
         )
+
+    # Home-based agent-plugins directories (Windows, macOS, Linux)
+    for rel in VSCODE_HOME_PLUGIN_DIRS:
+        candidates.append(os.path.join(home, rel))
 
     return tuple(dict.fromkeys(os.path.abspath(path) for path in candidates))
 

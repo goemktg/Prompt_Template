@@ -29,6 +29,7 @@
 - workspace target: `workspace_sync_server.py`는 현재 plugin root를 찾은 뒤, 별도 target workspace를 받아 `scripts/upgrade_ai.py`를 실행한다. target workspace가 plugin root일 필요는 없다.
 - plugin copy: 현재 cwd가 plugin copy 내부가 아니어도 VS Code settings의 `chat.pluginLocations`와 `globalStorage/.../agentPlugins` 하위 bounded walk를 통해 root를 찾는다.
 - settings lookup: `settings.json`은 Windows `APPDATA`, macOS `~/Library/Application Support`, Linux `~/.config` 순회 대상이다. `chat.pluginLocations` 값은 `dict`, `list`, `string`을 모두 허용한다.
+- home-based plugin dirs: `globalStorage` 경로에 추가로 `~/.vscode/agent-plugins`와 `~/.vscode-insiders/agent-plugins`도 모든 플랫폼 공통으로 `agentPlugins` 탐색 대상에 포함된다 (상수 `VSCODE_HOME_PLUGIN_DIRS`). VS Code 설치 위치에 무관하게 user-home 기반 설치를 지원한다.
 
 ## 현재 동작 포인트
 
