@@ -13,7 +13,7 @@
       "name": "prompt-template",
       "source": "./",
       "description": "prompt-template plugin for GitHub Copilot.",
-      "version": "1.0.0",
+      "version": "1.0.1",
         "agents": "./copilot/agents/",
         "skills": ["./copilot/skills/"],
         "hooks": "./copilot/hooks.json",
