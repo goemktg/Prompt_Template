@@ -461,6 +461,18 @@ When language rules conflict:
 - **Tests**: Write tests for core features
 - **Modularity**: Separate files by function/responsibility
 
+### AI-Friendly Code Structure
+
+- **Scope**: Heuristics and review triggers, not hard rules. Well-structured code at any size is preferable to mechanical splitting that obscures intent.
+- **File size targets**: 300–500 lines is the practical working range. Files exceeding 500 lines should prompt a responsibility check; files exceeding 1000 lines are refactor candidates unless a clear structural reason exists to keep them unified.
+- **Function / method size targets**: 20–50 lines per function. Functions that exceed this range typically contain multiple concerns; applying SRP naturally keeps functions within range.
+- **Rationale**: Files that fit within context windows reduce the risk of agents missing relevant code or making accidental edits in distant sections. Shorter functions are easier to test, mock, and reason about independently.
+- **Practical actions**:
+  - Split a growing file into focused modules when it exceeds the target size; update imports accordingly.
+  - Extract named helpers when a function grows beyond the target; the helper name should describe its single intent.
+  - Each file should have one describable responsibility — if it cannot be stated in a single sentence, consider splitting.
+  - Use docstrings or inline comments to justify intentionally large constructs (e.g., lookup tables, generated scaffolding).
+
 ### Legacy Code Management
 
 - **Criteria**: Code that is no longer used but contains valuable logic or experimental history.
